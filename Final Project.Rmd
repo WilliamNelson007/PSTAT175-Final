@@ -1,0 +1,30 @@
+---
+title: "PSTAT-175-Final-Project"
+author: "William Nelson"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+You want to write up your project as a report. It should look like something you can read with sentences\
+and paragraphs. It should not be a series of answers to my questions like the homework assignment. You\
+should have sections that are numbered, but those sections should relate to the analysis that you are doing in your model
+
+# Final Project
+
+## 1: Introduction
+
+### 1.1: Citations
+
+## 2: Model Fitting
+
+## 3: Check Proportional Hazards Assumptions
+
+## 4: Conclusions
+
+## 5: Advanced Methods
+
+## References
