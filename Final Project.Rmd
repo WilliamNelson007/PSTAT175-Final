@@ -17,7 +17,15 @@ should have sections that are numbered, but those sections should relate to the 
 
 ## 1: Introduction
 
-We will be analyzing the "GRACE1000" dataset from Hosmer and Lemenshow (2008), which contains data on 1000 patients who were part of a study on revascularization by the Global Registry of Acute Coronary Events (GRACE). Our failure time of interest is the follow up time when the researchers checked-in with the patients, and our event of interest is whether the patient died during the follow-up period. Our main covariate of interest will be whether the patient had the revascularization procedure performed on them, which is coded by the "revasc" variable with value 1 if the patient had the procedure and 0 if they did not.
+We will be analyzing the "GRACE1000" dataset from Hosmer and Lemenshow and May (2008), which contains data on 1000 patients who were part of a study on the effectiveness of revascularization by the Global Registry of Acute Coronary Events (GRACE). Our failure time of interest is the follow up time when the researchers checked-in with the patients, and our event of interest is whether the patient died during the follow-up period. Our main covariate of interest will be whether the patient had the revascularization procedure performed on them, which is coded by the "revasc" variable with value 1 if the patient had the procedure and 0 if they did not. The main research question of interest is whether revascularization is associated with higher survival rates after admission.
+
+Here is a plot of the survival functions of patients who had the revascularization procedure in blue and patients who did not have the procedure done in red:
+
+```{r}
+ggsurvplot(survfit(Surv(days,death) ~ revasc, data = GRACE1000))
+```
+
+We can see that patients who had revascularization done appear to have a higher survival probability compared to patients who did not have the procedure done.
 
 ### 1.1: Citations
 
