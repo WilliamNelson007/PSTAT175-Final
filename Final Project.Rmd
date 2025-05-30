@@ -17,6 +17,8 @@ should have sections that are numbered, but those sections should relate to the 
 
 ## 1: Introduction
 
+We will be analyzing the "GRACE1000" dataset from Hosmer and Lemenshow (2008), which contains data on 1000 patients who were part of a study on revascularization. Our failure time of interest is the follow up time when the researchers checked-in with the patients, and our event of interest is whether the patient died during the follow-up period. Our main covariate of interest will be whether the patient had the revascularization procedure performed on them, which is coded by the "revasc" variable with value 1 if the patient had the procedure and 0 if they did not.
+
 ### 1.1: Citations
 
 ## 2: Model Fitting
@@ -35,6 +37,8 @@ colnames(GRACE1000) <- c("id", "days", "death", "revasc", "revascdays", "los", "
 ```{r}
 # Forward Stepwise Selection
 # Possible covariates are revasc, revascdays, sysbp, age, stchange, los
+# Included revascdays despite it being equal to days if no revasc happened
+
 revdays.mod <- coxph(Surv(days,death) ~ revascdays, data = GRACE1000)
 age.mod <- coxph(Surv(days,death) ~ age, data = GRACE1000)
 sysbp.mod <- coxph(Surv(days,death) ~ sysbp, data = GRACE1000)
@@ -45,7 +49,9 @@ revasc.mod <- coxph(Surv(days,death) ~ revasc, data = GRACE1000)
 AIC(revdays.mod, age.mod, sysbp.mod, stchange.mod, los.mod, revasc.mod)
 BIC(revdays.mod, age.mod, sysbp.mod, stchange.mod, los.mod, revasc.mod)
 # Lowest AIC (4151.309) and BIC (4155.090) is age
+```
 
+```{r}
 age.revdays.mod <- coxph(Surv(days,death) ~ age + revascdays, data = GRACE1000)
 age.sysbp.mod <- coxph(Surv(days,death) ~ age + sysbp, data = GRACE1000)
 age.stchange.mod <- coxph(Surv(days,death) ~ age + stchange, data = GRACE1000)
@@ -55,7 +61,9 @@ age.revasc.mod <- coxph(Surv(days,death) ~ age + revasc, data = GRACE1000)
 AIC(age.revdays.mod, age.sysbp.mod, age.stchange.mod, age.los.mod, age.revasc.mod)
 BIC(age.revdays.mod, age.sysbp.mod, age.stchange.mod, age.los.mod, age.revasc.mod)
 # Lowest AIC (4043.699) and BIC (4051.261) is revascdays + age
+```
 
+```{r}
 revdays.age.sysbp.mod <- coxph(Surv(days,death) ~ revascdays + age + sysbp, data = GRACE1000)
 revdays.age.stchange.mod <- coxph(Surv(days,death) ~ revascdays + age + stchange, data = GRACE1000)
 revdays.age.los.mod <- coxph(Surv(days,death) ~ revascdays + age + los, data = GRACE1000)
@@ -64,7 +72,11 @@ revdays.age.revasc.mod <- coxph(Surv(days,death) ~ revascdays + age + revasc, da
 AIC(revdays.age.sysbp.mod, revdays.age.stchange.mod, revdays.age.los.mod, revdays.age.revasc.mod)
 BIC(revdays.age.sysbp.mod, revdays.age.stchange.mod, revdays.age.los.mod, revdays.age.revasc.mod)
 # Lowest AIC (3701.919) and BIC (3713.261) is revasc + revascdays + age
+# drops so much because revasc + revascdays together means if revasc = 0, it predicts
+# the days outcome as 180 perfectly 
+```
 
+```{r}
 revasc.revdays.age.sysbp.mod <- coxph(Surv(days,death) ~ revasc + revascdays + age + sysbp, data = GRACE1000)
 revasc.revdays.age.stchange.mod <- coxph(Surv(days,death) ~ revasc + revascdays + age + stchange, data = GRACE1000)
 revasc.revdays.age.los.mod <- coxph(Surv(days,death) ~ revasc + revascdays + age + los, data = GRACE1000)
@@ -73,14 +85,18 @@ AIC(revasc.revdays.age.sysbp.mod, revasc.revdays.age.stchange.mod, revasc.revday
 BIC(revasc.revdays.age.sysbp.mod, revasc.revdays.age.stchange.mod, revasc.revdays.age.los.mod)
 # Lowest AIC (3697.444) and BIC (3712.567) is sysbp + revasc + revascdays + age
 # very close to los with AIC of 3697.495 and BIC of 3712.618
+```
 
+```{r}
 sysbp.revasc.revdays.age.stchange.mod <- coxph(Surv(days,death) ~ sysbp + revasc + revascdays + age + stchange, data = GRACE1000)
 sysbp.revasc.revdays.age.los.mod <- coxph(Surv(days,death) ~ sysbp + revasc + revascdays + age + los, data = GRACE1000)
 
 AIC(sysbp.revasc.revdays.age.stchange.mod, sysbp.revasc.revdays.age.los.mod)
 BIC(sysbp.revasc.revdays.age.stchange.mod, sysbp.revasc.revdays.age.los.mod)
 # Lowest AIC (3696.180) and BIC (3711.925) is los + sysbp + revasc + revascdays + age
+```
 
+```{r}
 # See if stchange lowers AIC and BIC
 all.mod <- coxph(Surv(days,death) ~ stchange + sysbp + los + revasc + revascdays + age, data = GRACE1000)
 AIC(all.mod) # 3691.309 lowers
@@ -88,17 +104,103 @@ BIC(all.mod) # 3713.994 raises, stchange not needed by BIC criterion
 
 # According to forward stepwise selection by AIC, the full model is the best model
 # According to BIC, the model with all covariates except stchange is the best model
+# Maybe go with BIC to not have all covariates?
 ```
 
 ## 3: Check Proportional Hazards Assumptions
 
+Log-Log plot for revasc:
+
+```{r}
+ggsurvplot(survfit(Surv(days,death) ~ revasc, data = GRACE1000),
+           fun = "cloglog") + 
+  labs(x = "log(Days)", y = "Complementary Log-Log",
+       title = "Log-Log Plot by Revasc")
+# Seems very parallel, no assumptions violated
+```
+
+Log-Log plot for stchange? might not include because BIC says not to
+
+```{r}
+ggsurvplot(survfit(Surv(days,death) ~ stchange, data = GRACE1000),
+           fun = "cloglog") + 
+  labs(x = "log(Days)", y = "Complementary Log-Log",
+       title = "Log-Log Plot by Stchange")
+# also very parallel lines, no assumptions violated
+```
+
+ZPH plot for age:
+
+```{r}
+cox.zph(age.mod)
+plot(cox.zph(age.mod))
+# has significant p-value but plot does 
+# not appear to have strong trend
+```
+
+```{r}
+cox.zph(sysbp.mod)
+plot(cox.zph(sysbp.mod))
+# The zph test gives a significant p-value which means sysbp violates
+# proportional hazards assumption due to time dependency 
+# but plot does not seem to have a clear correlation
+```
+
+```{r}
+cox.zph(los.mod)
+plot(cox.zph(los.mod))
+# time variable so makes sense it has very small p-value
+```
+
+```{r}
+cox.zph(revdays.mod)
+plot(cox.zph(revdays.mod))
+# Definitely violates ph assumptions due to way it is coded
+```
+
 ## 4: Conclusions
+
+Hazard Ratios
+
+95% confidence intervals for hazard ratios
+
+Our main scientific question of interest is whether the revascularization procedure significantly increases patients' survival probabilities
+
+```{r}
+# Revasc:
+
+summary(revasc.mod)
+# Hazard ratio is exp(coef) = 0.4892
+# means almost 50% less likely to die with revasc?
+exp(coef(revasc.mod) + c(-1.96,1.96) * sqrt(revasc.mod$var[1,1]))
+# 95% confidence interval is [0.3909648, 0.6122096]
+```
+
+```{r}
+# stchange
+
+summary(stchange.mod)
+# Hazard ratio = 1.6802
+# means almost 70% mroe likelt to die with stchange?
+exp(coef(stchange.mod) + c(-1.96,1.96) * sqrt(stchange.mod$var[1,1]))
+# 95% confidence interval is [1.332036, 2.119339]
+```
 
 ## 5: Advanced Methods
 
 -   Modifiying to have start time as revascdays
 
     -   or split to have a second observation per patient?
+
+-   Stratify on stchange
+
+-   Gap model with time between revascularization and follow up time?
+
+```{r}
+revasc.strata.mod <- coxph(Surv(days,death) ~ strata(stchange) + revasc, data = GRACE1000)
+summary(revasc.strata.mod)
+# about the same as without strata
+```
 
 ## References
 
