@@ -44,75 +44,46 @@ colnames(GRACE1000) <- c("id", "days", "death", "revasc", "revascdays", "los", "
 
 ```{r}
 # Forward Stepwise Selection
-# Possible covariates are revasc, revascdays, sysbp, age, stchange, los
+# Possible covariates are revasc, revascdays, sysbp, age, stchange
 # Included revascdays despite it being equal to days if no revasc happened
 
-revdays.mod <- coxph(Surv(days,death) ~ revascdays, data = GRACE1000)
 age.mod <- coxph(Surv(days,death) ~ age, data = GRACE1000)
 sysbp.mod <- coxph(Surv(days,death) ~ sysbp, data = GRACE1000)
 stchange.mod <- coxph(Surv(days,death) ~ stchange, data = GRACE1000)
-los.mod <- coxph(Surv(days,death) ~ los, data = GRACE1000)
 revasc.mod <- coxph(Surv(days,death) ~ revasc, data = GRACE1000)
 
-AIC(revdays.mod, age.mod, sysbp.mod, stchange.mod, los.mod, revasc.mod)
-BIC(revdays.mod, age.mod, sysbp.mod, stchange.mod, los.mod, revasc.mod)
+AIC(age.mod, sysbp.mod, stchange.mod, revasc.mod)
+BIC(age.mod, sysbp.mod, stchange.mod, revasc.mod)
 # Lowest AIC (4151.309) and BIC (4155.090) is age
 ```
 
 ```{r}
-age.revdays.mod <- coxph(Surv(days,death) ~ age + revascdays, data = GRACE1000)
 age.sysbp.mod <- coxph(Surv(days,death) ~ age + sysbp, data = GRACE1000)
 age.stchange.mod <- coxph(Surv(days,death) ~ age + stchange, data = GRACE1000)
-age.los.mod <- coxph(Surv(days,death) ~ age + los, data = GRACE1000)
 age.revasc.mod <- coxph(Surv(days,death) ~ age + revasc, data = GRACE1000)
 
-AIC(age.revdays.mod, age.sysbp.mod, age.stchange.mod, age.los.mod, age.revasc.mod)
-BIC(age.revdays.mod, age.sysbp.mod, age.stchange.mod, age.los.mod, age.revasc.mod)
-# Lowest AIC (4043.699) and BIC (4051.261) is revascdays + age
+AIC(age.sysbp.mod, age.stchange.mod, age.revasc.mod)
+BIC(age.sysbp.mod, age.stchange.mod, age.revasc.mod)
+# Lowest AIC (4131.179) and BIC (4138.741	) is sysbp + age
 ```
 
 ```{r}
-revdays.age.sysbp.mod <- coxph(Surv(days,death) ~ revascdays + age + sysbp, data = GRACE1000)
-revdays.age.stchange.mod <- coxph(Surv(days,death) ~ revascdays + age + stchange, data = GRACE1000)
-revdays.age.los.mod <- coxph(Surv(days,death) ~ revascdays + age + los, data = GRACE1000)
-revdays.age.revasc.mod <- coxph(Surv(days,death) ~ revascdays + age + revasc, data = GRACE1000)
+sysbp.age.stchange.mod <- coxph(Surv(days,death) ~ sysbp + age + stchange, data = GRACE1000)
+sysbp.age.revasc.mod <- coxph(Surv(days,death) ~ sysbp + age + revasc, data = GRACE1000)
 
-AIC(revdays.age.sysbp.mod, revdays.age.stchange.mod, revdays.age.los.mod, revdays.age.revasc.mod)
-BIC(revdays.age.sysbp.mod, revdays.age.stchange.mod, revdays.age.los.mod, revdays.age.revasc.mod)
-# Lowest AIC (3701.919) and BIC (3713.261) is revasc + revascdays + age
-# drops so much because revasc + revascdays together means if revasc = 0, it predicts
-# the days outcome as 180 perfectly 
+AIC(sysbp.age.stchange.mod, sysbp.age.revasc.mod)
+BIC(sysbp.age.stchange.mod, sysbp.age.revasc.mod)
+# Lowest AIC (4116.536) and BIC (4127.879) is revasc + sysbp + age
 ```
 
-```{r}
-revasc.revdays.age.sysbp.mod <- coxph(Surv(days,death) ~ revasc + revascdays + age + sysbp, data = GRACE1000)
-revasc.revdays.age.stchange.mod <- coxph(Surv(days,death) ~ revasc + revascdays + age + stchange, data = GRACE1000)
-revasc.revdays.age.los.mod <- coxph(Surv(days,death) ~ revasc + revascdays + age + los, data = GRACE1000)
-
-AIC(revasc.revdays.age.sysbp.mod, revasc.revdays.age.stchange.mod, revasc.revdays.age.los.mod)
-BIC(revasc.revdays.age.sysbp.mod, revasc.revdays.age.stchange.mod, revasc.revdays.age.los.mod)
-# Lowest AIC (3697.444) and BIC (3712.567) is sysbp + revasc + revascdays + age
-# very close to los with AIC of 3697.495 and BIC of 3712.618
-```
-
-```{r}
-sysbp.revasc.revdays.age.stchange.mod <- coxph(Surv(days,death) ~ sysbp + revasc + revascdays + age + stchange, data = GRACE1000)
-sysbp.revasc.revdays.age.los.mod <- coxph(Surv(days,death) ~ sysbp + revasc + revascdays + age + los, data = GRACE1000)
-
-AIC(sysbp.revasc.revdays.age.stchange.mod, sysbp.revasc.revdays.age.los.mod)
-BIC(sysbp.revasc.revdays.age.stchange.mod, sysbp.revasc.revdays.age.los.mod)
-# Lowest AIC (3696.180) and BIC (3711.925) is los + sysbp + revasc + revascdays + age
-```
 
 ```{r}
 # See if stchange lowers AIC and BIC
-all.mod <- coxph(Surv(days,death) ~ stchange + sysbp + los + revasc + revascdays + age, data = GRACE1000)
-AIC(all.mod) # 3691.309 lowers
-BIC(all.mod) # 3713.994 raises, stchange not needed by BIC criterion 
+all.mod <- coxph(Surv(days,death) ~ stchange + sysbp + revasc + age, data = GRACE1000)
+AIC(all.mod) # 4100.721 lowers
+BIC(all.mod) # 4115.844 lowers
 
-# According to forward stepwise selection by AIC, the full model is the best model
-# According to BIC, the model with all covariates except stchange is the best model
-# Maybe go with BIC to not have all covariates?
+# According to forward stepwise selection by AIC and BIC, the full model is the best model
 ```
 
 ## 3: Check Proportional Hazards Assumptions
