@@ -17,7 +17,7 @@ should have sections that are numbered, but those sections should relate to the 
 
 ## 1: Introduction
 
-We will be analyzing the "GRACE1000" dataset from Hosmer and Lemenshow (2008), which contains data on 1000 patients who were part of a study on revascularization. Our failure time of interest is the follow up time when the researchers checked-in with the patients, and our event of interest is whether the patient died during the follow-up period. Our main covariate of interest will be whether the patient had the revascularization procedure performed on them, which is coded by the "revasc" variable with value 1 if the patient had the procedure and 0 if they did not.
+We will be analyzing the "GRACE1000" dataset from Hosmer and Lemenshow (2008), which contains data on 1000 patients who were part of a study on revascularization by the Global Registry of Acute Coronary Events (GRACE). Our failure time of interest is the follow up time when the researchers checked-in with the patients, and our event of interest is whether the patient died during the follow-up period. Our main covariate of interest will be whether the patient had the revascularization procedure performed on them, which is coded by the "revasc" variable with value 1 if the patient had the procedure and 0 if they did not.
 
 ### 1.1: Citations
 
@@ -188,6 +188,8 @@ exp(coef(stchange.mod) + c(-1.96,1.96) * sqrt(stchange.mod$var[1,1]))
 
 ## 5: Advanced Methods
 
+***--------\>Time-varying covariates*** \<-------
+
 -   Modifiying to have start time as revascdays
 
     -   or split to have a second observation per patient?
@@ -195,6 +197,20 @@ exp(coef(stchange.mod) + c(-1.96,1.96) * sqrt(stchange.mod$var[1,1]))
 -   Stratify on stchange
 
 -   Gap model with time between revascularization and follow up time?
+
+-   Time varying covariate:
+
+    -   revasc(t) = 0 if t \<= revascdays or revasc = 0
+
+    -   revasc(t) = 1 if t \> revascdays and revasc = 1
+
+    -   From Textbook pages:
+
+        -   For example, suppose a subject underwent revascularization on day 4 and died on day 10. In the naive analysis, all 10 days of follow up are attributed to survival after revascularization. In the correct time-varying approach, days 0 to 4 are counted toward survival without revascularization and 5 to 10 days are counted toward survival with revascularization (i.e., revasc(t) = 0 for t \<= 4 and revasc(t) = 1 for t \> 4).
+
+-   Also from textbook:
+
+    -   Split revascdays into 0.5-1 and 2-14 -\> only days 0 and 1 are significant
 
 ```{r}
 revasc.strata.mod <- coxph(Surv(days,death) ~ strata(stchange) + revasc, data = GRACE1000)
