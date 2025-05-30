@@ -193,10 +193,9 @@ start = revascdays, stop = days for second observation
 patients without revasc are not split at all: start = 0, stop = days
 best way to do it would to be to subset dataset of just revasc = 1 patients, split observations into 2 by revascdays, and rejoin with revasc = 0 patients who now have start = 0, stop = days
 
--   Also from textbook:
+-   Also from textbook, can consider this after doing time-varying covariate for revascdays:
 
     -   Split revascdays into 0.5-1 and 2-14 -\> only days 0 and 1 are significant
-    -   Can consider this after doing time-varying covariate for revascdays
 
 ```{r}
 # Not very important
