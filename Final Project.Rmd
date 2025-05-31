@@ -13,6 +13,14 @@ You want to write up your project as a report. It should look like something you
 and paragraphs. It should not be a series of answers to my questions like the homework assignment. You\
 should have sections that are numbered, but those sections should relate to the analysis that you are doing in your model
 
+```{r, message=FALSE, warning=FALSE}
+library(readr)
+library(tidyverse)
+library(survival)
+library(survminer)
+library(ggplot2)
+```
+
 # Final Project
 
 ## 1: Introduction
@@ -20,6 +28,13 @@ should have sections that are numbered, but those sections should relate to the 
 We will be analyzing the "GRACE1000" dataset from Hosmer and Lemenshow and May (2008), which contains data on 1000 patients who were part of a study on the effectiveness of revascularization by the Global Registry of Acute Coronary Events (GRACE). Our failure time of interest is the follow up time when the researchers checked-in with the patients, and our event of interest is whether the patient died during the follow-up period. Our main covariate of interest will be whether the patient had the revascularization procedure performed on them, which is coded by the "revasc" variable with value 1 if the patient had the procedure and 0 if they did not. The main research question of interest is whether revascularization is associated with higher survival rates after admission.
 
 Here is a plot of the survival functions of patients who had the revascularization procedure in blue and patients who did not have the procedure done in red:
+
+```{r, message=FALSE, warning=FALSE}
+#GRACE1000 <- read_table("C:/Users/willi/OneDrive/Documents/GitHub/PSTAT175-Final/GRACE1000.dat", col_names = FALSE)
+GRACE1000 <- read_table("GRACE1000.dat", col_names = FALSE)
+GRACE1000 <- GRACE1000 %>% select(-X10)
+colnames(GRACE1000) <- c("id", "days", "death", "revasc", "revascdays", "los", "age", "sysbp", "stchange")
+```
 
 ```{r}
 ggsurvplot(survfit(Surv(days,death) ~ revasc, data = GRACE1000))
@@ -30,17 +45,6 @@ We can see that patients who had revascularization done appear to have a higher 
 ### 1.1: Citations
 
 ## 2: Model Fitting
-
-```{r, message=FALSE, warning=FALSE}
-library(readr)
-library(tidyverse)
-library(survival)
-library(survminer)
-library(ggplot2)
-GRACE1000 <- read_table("C:/Users/willi/OneDrive/Documents/GitHub/PSTAT175-Final/GRACE1000.dat", col_names = FALSE)
-GRACE1000 <- GRACE1000 %>% select(-X10)
-colnames(GRACE1000) <- c("id", "days", "death", "revasc", "revascdays", "los", "age", "sysbp", "stchange")
-```
 
 ```{r}
 # Forward Stepwise Selection
@@ -205,6 +209,73 @@ summary(revasc.strata.mod)
 # actually makes revasc a small bit more significant but not much
 ```
 
+
+
+```{r}
+#PLEASE CHECK MY WORK
+gracer1 <- filter(GRACE1000, revasc==1)
+gracer0 <- filter(GRACE1000, revasc==0)
+
+#working with revasc = 0
+gracer0 = gracer0 %>% mutate(start=0,stop=days,status=0)
+
+#working with revasc = 1
+#duplicate each row
+gracer1.1 <- cbind(gracer1, rep(row.names(gracer1), each = 2))
+#sort the rows by id, assign each a row number
+gracer1.1 = gracer1.1 %>% arrange(gracer1.1, by_group=id) %>% select(!`rep(row.names(gracer1), each = 2)`) %>% mutate(row = row_number())
+#start, stop, and status predicated on whether the row is even or odd
+gracer1.1 = gracer1.1 %>% mutate(start=ifelse(row%%2==1,0,revascdays),stop=ifelse(row%%2==1,revascdays,days),status=ifelse(row%%2==1,0,1)) %>% select(!row)
+#remove the duplicate rows with start=stop=0 (or revasc=0)
+gracer1.2 <-gracer1.1 %>% filter(start!=stop)
+
+#combine the datasets, sort by id 
+grace2 = rbind(gracer0, gracer1.2)
+grace2 = grace2 %>% arrange(grace2, by_group=id)
+head(grace2)
+```
+
+```{r}
+tvc.1 <- coxph(Surv(start, stop, status) ~ revasc, data = grace2)
+summary(tvc.1)
+```
+
+Following the textbook - "suppose the clinicians on the GRACE study wanted
+to determine whether the effect depended on the number of days from admission to revascularization."
+
+```{r}
+gracer0.1 = gracer0 %>% mutate(revasc0=0,revasc1=0,revasc23=0,revasc47=0,revasc8t=0,revascef=0)
+
+#working with revasc = 1
+#duplicate each row
+gracer1.3 <- cbind(gracer1, rep(row.names(gracer1), each = 2))
+#sort the rows by id, assign each a row number
+gracer1.3 = gracer1.3 %>% arrange(gracer1.3, by_group=id) %>% select(!`rep(row.names(gracer1), each = 2)`) %>% mutate(row = row_number())
+
+
+#start, stop predicated on whether the row is even or odd
+gracer1.3 = gracer1.3 %>% mutate(start=ifelse(row%%2==1,0,revascdays),stop=ifelse(row%%2==1,revascdays,days),status=ifelse(row%%2==1,0,1))
+
+gracer1.3 <- gracer1.3 %>% mutate(revasc0=ifelse(row%%2==0 & revascdays==0,1,0),
+                     revasc1=ifelse(row%%2==0 & revascdays==1,1,0),
+                     revasc23=ifelse(row%%2==0 & revascdays>=2 & revascdays<=3,1,0),
+                     revasc47=ifelse(row%%2==0 & revascdays>=4 & revascdays<=7,1,0),
+                     revasc8t=ifelse(row%%2==0 & revascdays>=8 & revascdays<=10,1,0),
+                     revascef=ifelse(row%%2==0 & revascdays>=11 & revascdays<=14,1,0)) %>% select(!row)
+
+gracer1.4 <- gracer1.3 %>% filter(start!=stop)
+
+#combine the datasets, sort by id 
+grace3 = rbind(gracer0.1, gracer1.4)
+grace3 = grace3 %>% arrange(grace3, by_group=id)
+head(grace3)
+```
+
+
+```{r}
+tvc.2 <- coxph(Surv(start, stop, status) ~ revasc0 + revasc1 + revasc23 + revasc47 + revasc8t + revascef, data = grace3)
+summary(tvc.2)
+```
 ## References
 
 Hosmer, D.W. and Lemeshow, S. and May, S. (2008) Applied Survival Analysis: Regression Modeling of Time to Event Data: Second Edition, John Wiley and Sons Inc., New York, NY
