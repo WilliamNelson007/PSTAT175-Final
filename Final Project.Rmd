@@ -225,18 +225,18 @@ gracer1.1 <- cbind(gracer1, rep(row.names(gracer1), each = 2))
 #sort the rows by id, assign each a row number
 gracer1.1 = gracer1.1 %>% arrange(gracer1.1, by_group=id) %>% select(!`rep(row.names(gracer1), each = 2)`) %>% mutate(row = row_number())
 #start, stop, and status predicated on whether the row is even or odd
-gracer1.1 = gracer1.1 %>% mutate(start=ifelse(row%%2==1,0,revascdays),stop=ifelse(row%%2==1,revascdays,days),status=ifelse(row%%2==1,0,1)) %>% select(!row)
-#remove the duplicate rows with start=stop=0 (or revasc=0)
-gracer1.2 <-gracer1.1 %>% filter(start!=stop)
-
-#combine the datasets, sort by id 
+gracer1.1 = gracer1.1 %>% mutate(start=ifelse(row%%2==1,0,revascdays),stop=ifelse(row%%2==1,revascdays,days),status=ifelse(row%%2==1,0,1)) %>% select(-c(revasc,row))
+#remove the duplicate rows with start=stop=0 (or revascdays=0)
+gracer1.2 <-gracer1.1 %>% filter(start!=stop) %>% mutate(revasc=status)
+gracer1.2
+#combine the datasets, sort by id
 grace2 = rbind(gracer0, gracer1.2)
 grace2 = grace2 %>% arrange(grace2, by_group=id)
 head(grace2)
 ```
 
 ```{r}
-tvc.1 <- coxph(Surv(start, stop, status) ~ revasc, data = grace2)
+tvc.1 <- coxph(Surv(start, stop, status) ~ status, data = grace2)
 summary(tvc.1)
 ```
 
