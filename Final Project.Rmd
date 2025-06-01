@@ -80,7 +80,6 @@ BIC(sysbp.age.stchange.mod, sysbp.age.revasc.mod)
 # Lowest AIC (4116.536) and BIC (4127.879) is revasc + sysbp + age
 ```
 
-
 ```{r}
 # See if stchange lowers AIC and BIC
 all.mod <- coxph(Surv(days,death) ~ stchange + sysbp + revasc + age, data = GRACE1000)
@@ -179,10 +178,9 @@ exp(confint(stchange.mod))
 
     -   or split to have a second observation per patient?
 
-    Stratify on stchange?
-    -> Did not affect model with just revasc much
+    Stratify on stchange? -\> Did not affect model with just revasc much
 
--   Time varying covariate: 
+-   Time varying covariate:
 
     -   revasc(t) = 0 if t \<= revascdays or revasc = 0
 
@@ -192,10 +190,7 @@ exp(confint(stchange.mod))
 
     -   For example, suppose a subject underwent revascularization on day 4 and died on day 10. In the naive analysis, all 10 days of follow up are attributed to survival after revascularization. In the correct time-varying approach, days 0 to 4 are counted toward survival without revascularization and 5 to 10 days are counted toward survival with revascularization (i.e., revasc(t) = 0 for t \<= 4 and revasc(t) = 1 for t \> 4).
 
-Split patients with revasc into 2 observations with start stop: start = 0, stop = revascdays for first and
-start = revascdays, stop = days for second observation
-patients without revasc are not split at all: start = 0, stop = days
-best way to do it would to be to subset dataset of just revasc = 1 patients, split observations into 2 by revascdays, and rejoin with revasc = 0 patients who now have start = 0, stop = days
+Split patients with revasc into 2 observations with start stop: start = 0, stop = revascdays for first and start = revascdays, stop = days for second observation patients without revasc are not split at all: start = 0, stop = days best way to do it would to be to subset dataset of just revasc = 1 patients, split observations into 2 by revascdays, and rejoin with revasc = 0 patients who now have start = 0, stop = days
 
 -   Also from textbook, can consider this after doing time-varying covariate for revascdays:
 
@@ -208,8 +203,6 @@ summary(revasc.strata.mod)
 # about the same as without strata
 # actually makes revasc a small bit more significant but not much
 ```
-
-
 
 ```{r}
 #PLEASE CHECK MY WORK
@@ -240,8 +233,7 @@ tvc.1 <- coxph(Surv(start, stop, status) ~ status, data = grace2)
 summary(tvc.1)
 ```
 
-Following the textbook - "suppose the clinicians on the GRACE study wanted
-to determine whether the effect depended on the number of days from admission to revascularization."
+Following the textbook - "suppose the clinicians on the GRACE study wanted to determine whether the effect depended on the number of days from admission to revascularization."
 
 ```{r}
 gracer0.1 = gracer0 %>% mutate(revasc0=0,revasc1=0,revasc23=0,revasc47=0,revasc8t=0,revascef=0)
@@ -271,11 +263,11 @@ grace3 = grace3 %>% arrange(grace3, by_group=id)
 head(grace3)
 ```
 
-
 ```{r}
 tvc.2 <- coxph(Surv(start, stop, status) ~ revasc0 + revasc1 + revasc23 + revasc47 + revasc8t + revascef, data = grace3)
 summary(tvc.2)
 ```
+
 ## References
 
 Hosmer, D.W. and Lemeshow, S. and May, S. (2008) Applied Survival Analysis: Regression Modeling of Time to Event Data: Second Edition, John Wiley and Sons Inc., New York, NY
