@@ -18,35 +18,35 @@ library(ggplot2)
 library(knitr)
 ```
 
-# Final Project
-
-## 1: Introduction
-
-We will be analyzing the "GRACE1000" dataset from Hosmer and Lemenshow and May (2008), which contains data on 1000 patients who were part of a study on the effectiveness of revascularization by the Global Registry of Acute Coronary Events (GRACE). Our failure time of interest is the follow up time when the researchers checked-in with the patients, and our event of interest is whether the patient died during the follow-up period. Our main covariate of interest will be whether the patient had the revascularization procedure performed on them, which is coded by the "revasc" variable with value 1 if the patient had the procedure and 0 if they did not. The main research question of interest is whether revascularization is associated with higher survival rates after admission.
-
-Here is a plot of the survival functions of patients who had the revascularization procedure in blue and patients who did not have the procedure done in red:
-
 ```{r, message=FALSE, warning=FALSE}
+# Read in data
 GRACE1000 <- read_table("GRACE1000.dat", col_names = FALSE)
 #GRACE1000 <- read_table("~/Downloads/GRACE1000.dat", col_names = FALSE)
 GRACE1000 <- GRACE1000 %>% select(-X10)
 colnames(GRACE1000) <- c("id", "days", "death", "revasc", "revascdays", "los", "age", "sysbp", "stchange")
 ```
 
+# Final Project
+
+## 1: Introduction
+
+We will be analyzing the "GRACE1000" dataset from Hosmer and Lemenshow and May (2008), which contains data on 1000 patients who were part of a study on the effectiveness of revascularization by the Global Registry of Acute Coronary Events (GRACE). Our failure time of interest is the follow up time when the researchers checked-in with the patients, and our event of interest is whether the patient died during the follow-up period. Our main covariate of interest will be whether the patient had the revascularization procedure performed on them, which is coded by the "revasc" variable with value 1 if the patient had the procedure and 0 if they did not. The main research question of interest is whether revascularization is associated with higher survival rates after completing the procedure.
+
+Here is a plot of the survival functions of patients who had the revascularization procedure in blue and patients who did not have the procedure done in red:
+
 ```{r}
 ggsurvplot(survfit(Surv(days,death) ~ revasc, data = GRACE1000))
 ```
 
-We can see that patients who had revascularization done appear to have a higher survival probability compared to patients who did not have the procedure done.
+We can see that at first glance, patients who had revascularization done appear to have a higher survival probability compared to patients who did not have the procedure done. We will further explore this data with the tools we have learned:
 
-### 1.1: Citations
+\newpage
 
 ## 2: Model Fitting
 
 ```{r, warning = FALSE}
 # Forward Stepwise Selection
-# Possible covariates are revasc, revascdays, sysbp, age, stchange
-# Included revascdays despite it being equal to days if no revasc happened
+# Possible covariates are revasc, sysbp, age, stchange
 
 age.mod <- coxph(Surv(days,death) ~ age, data = GRACE1000)
 sysbp.mod <- coxph(Surv(days,death) ~ sysbp, data = GRACE1000)
@@ -86,6 +86,8 @@ kable(data.frame(Metric = c("AIC", "BIC"), Value = c(AIC(all.mod), BIC(all.mod))
 
 After fitting a comprehensive Cox proportional hazards model incorporating all considered predictors: ST change, systolic blood pressure, revascularization, and age, the resulting AIC value was 4100.721 and BIC was 4115.844, both lower than those from the previous models. This indicates that including all variables yields the best-fitting model based on forward stepwise selection criteria. These results suggest that while age alone and age in combination with other predictors offer substantial predictive power, the full model provides the most accurate explanation of survival probability in this dataset, balancing model complexity with fit.
 
+\newpage
+
 ## 3: Check Proportional Hazards Assumptions
 
 ```{r}
@@ -107,7 +109,7 @@ ggsurvplot(survfit(Surv(days,death) ~ stchange, data = GRACE1000),
 
 The Complementary Log-Log plot for Stchange also displays curves that do not cross into higher time values, meaning the proportional hazards assumption also holds here with the different Stchange values.
 
-### ZPH plot for age:
+### ZPH Plot for Age:
 
 ```{r, warning = FALSE}
 kable(as.data.frame(cox.zph(age.mod)$table))
@@ -116,7 +118,7 @@ plot(cox.zph(age.mod))
 
 The statistical ouput shows a p-value of 0.0053 for both age and the global test, which is highly significant (p \< 0.05). This indicates a violation of the proportional hazards assumption for age, meaning that the effect of age on the hazard is not constant over time. This zph plot visualizes Schoenfeld residuals for age over time in the Cox model. The residuals appear randomly scattered around the horizontal axis, and the smoothed curve does not display a clear trend. This pattern suggests that the proportional hazards assumption for age holds reasonably well. Although we can't see it in the graph, with the p-value being that low we will still assume the ph assumptions are being violated.
 
-### ZPH Plot for Systolic Blood Pressure
+### ZPH Plot for Systolic Blood Pressure:
 
 ```{r}
 kable(as.data.frame(cox.zph(sysbp.mod)$table))
@@ -127,7 +129,7 @@ Here we see Systolic Blood Pressure also violating the proportional hazards assu
 
 ## 4: Conclusions
 
-Our main scientific question of interest is whether the revascularization procedure significantly increases patients' survival probabilities
+Our main scientific question of interest is whether the revascularization procedure significantly increases patients' survival probabilities, and while we have a general idea, we can take a look at the results of our models:
 
 ```{r}
 summary(revasc.mod)
@@ -147,44 +149,55 @@ Patients with an ST change on their initial ECG have a 68% higher hazard of mort
 
 ## 5: Advanced Methods
 
-***--------\>Time-varying covariates*** \<-------
+### Binning Revascdays
 
--   Modifiying to have start time as revascdays
-
-    -   or split to have a second observation per patient?
-
-    Stratify on stchange? -\> Did not affect model with just revasc much
-
--   Time varying covariate:
-
-    -   revasc(t) = 0 if t \<= revascdays or revasc = 0
-
-    -   revasc(t) = 1 if t \> revascdays and revasc = 1
-
-    -   From Textbook pages:
-
-    -   For example, suppose a subject underwent revascularization on day 4 and died on day 10. In the native analysis, all 10 days of follow up are attributed to survival after revascularization. In the correct time-varying approach, days 0 to 4 are counted toward survival without revascularization and 5 to 10 days are counted toward survival with revascularization (i.e., revasc(t) = 0 for t \<= 4 and revasc(t) = 1 for t \> 4).
-
-Split patients with revasc into 2 observations with start stop: start = 0, stop = revascdays for first and start = revascdays, stop = days for second observation patients without revasc are not split at all: start = 0, stop = days best way to do it would to be to subset dataset of just revasc = 1 patients, split observations into 2 by revascdays, and rejoin with revasc = 0 patients who now have start = 0, stop = days
-
--   Also from textbook, can consider this after doing time-varying covariate for revascdays:
-
-    -   Split revascdays into 0.5-1 and 2-14 -\> only days 0 and 1 are significant
+In the GRACE1000 dataset, "revascdays" is coded as the censor time if the patient did not have the revascularization procedure done. We hypothesize that this could interfere with our models' performance because we have many observations that did not have revascularization done and were censored at the end of the study (180 days), so the range of values from 0 to 180 may not be the best way to analyze the covariate. We will instead experiment with binning "revascdays" into a categorical variable called "daysGroup" which will take on ranges of values from "revascdays" so we can analyze the covariate as a set of ranges rather than continuous. We will set nearly equally spaced intervals for the bins, but after binning them this way, we can analyze the results and look for other ways to group the values:
 
 ```{r}
-# Not very important
-revasc.strata.mod <- coxph(Surv(days,death) ~ strata(stchange) + revasc, data = GRACE1000)
-summary(revasc.strata.mod)
-# about the same as without strata
-# actually makes revasc a small bit more significant but not much
+binnedGRACE1000 <- GRACE1000 %>% mutate(
+  daysGroup = case_when(
+    (revascdays >= 0 & revascdays <= 2) ~ "0-2 Days",
+    (revascdays >= 3 & revascdays <= 6) ~ "3-6 Days",
+    (revascdays >= 7 & revascdays <= 10) ~ "7-10 Days",
+    (revascdays >= 11 & revascdays <= 14) ~ "11-14 Days",
+    revascdays > 14 ~ "14+ Days"
+  )
+)
 ```
+
+Now that we have our new data, lets see the results of our Cox PH model on the binned covariate:
 
 ```{r}
-gracer1 <- filter(GRACE1000, revasc==1)
-gracer0 <- filter(GRACE1000, revasc==0)
+summary(coxph(Surv(days,death) ~ daysGroup, data = binnedGRACE1000))
 ```
 
-### Splitting data on the day the patient got the revascularization
+This model is using the "0-2 Days" group as a baseline which we know because it does not show up in the summary output. This means that all of the hazard ratios seen in this output are in relation to the "0-2 Days" till revascularization group. We see that the "14+ Days" group has a statistically significant difference in survival probabilities according to this model with a hazard ratio of 0.7272 compared to the "0-2 Days" group. We also see that the "3-6 Days" group is the only group to have a higher hazard rate than the "0-2 Days" group, so I would like to change the bins to explore this further:
+
+```{r}
+binnedGRACE1000 <- GRACE1000 %>% mutate(
+  daysGroup = case_when(
+    (revascdays >= 0 & revascdays <= 2) ~ "0-2 Days",
+    (revascdays >= 3 & revascdays <= 14) ~ "3-14 Days",
+    revascdays >= 15 ~ "15+ Days"
+  )
+)
+
+summary(coxph(Surv(days,death) ~ daysGroup, data = binnedGRACE1000))
+```
+
+In this new binned data we see a similar outcome where the control group (revascdays = 180) has a statistically significant difference in hazard rates than the "0-2 Days" group. Lets take a look at a graph of this result:
+
+```{r}
+ggsurvplot(survfit(Surv(days,death) ~ daysGroup, data = binnedGRACE1000))
+```
+
+I believe that the higher volume of censored observations in the 0-2 and 3-14 day groups along with the correlation of the patients needing the revascularization procedure could be affecting the model to calculate a higher hazard rate for patients with early revascularization, but this also is not the best way to deal with the revascularization times. Now that we have explored the "revascdays" covariate, let us focus on our covariate of interest, "revasc".
+
+### Treating Revascularization as a Time-Dependent Covariate
+
+When trying to answer the question of whether the revascularization procedure is associated with higher survival rates, we run into a problem with our data in that not all of our observations had the revascularization procedure on day 0 or the first day they were a part of the study. This means that if a patient had the revascularization done on the 5th day (revascdays = 5), then our models are counting the first 5 days as this patient already having the procedure done, when in reality it has not happened until later. To fix this issue with the data, we will treat "revasc" as a binary time-dependent covariate that changes at some point in the study. To implement the time-varying covariate, we will split every observation that had the revascularization procedure done into 2 observations where the first observation has a start time of 0 and a stop time of the day they had the procedure done, and the second observation will have a start time of the day the procedure was done and a stop time of when the observation was censored. This way our models will properly understand that patients have not had the procedure done until the day given by "revascdays", and therefore are not a part of the treatment group until then.
+
+We will manipulate the data to achieve this:
 
 ```{r, warning = FALSE}
 library(dplyr)
@@ -212,14 +225,15 @@ grace2 <- GRACE1000 %>%
     values_from = value
   ) %>%
   filter(!is.na(stop)) %>%
-  arrange(id, interval)
+  arrange(id, interval) %>% 
+  filter(!(start==0 & stop==0))
 
 # Check output
 kable(head(grace2))
 
 ```
 
-### Cox PH to show the effect of revasc now that we have accounted for time
+### Cox PH to show the effect of revascularization now that we have accounted for time
 
 ```{r, warning = FALSE}
 tvc <- coxph(Surv(start, stop, status) ~ revasc, data = grace2)
@@ -228,7 +242,7 @@ summary(tvc)
 
 In this Cox proportional hazards model, we analyzed the effect of revascularization on patient survival, accounting for the time-varying nature of the treatment by splitting the dataset at the point when revascularization was performed. The model revealed a significant association between revascularization and reduced hazard of death, with a hazard ratio of approximately 0.50 (95% CI: 0.40, 0.63), indicating that after revascularization, the risk of death was roughly half that of patients who had not yet undergone the procedure. This approach effectively modeled the time-dependent impact of revascularization by allowing the treatment’s hazard to vary based on when it was performed during the follow-up period. Overall, these results suggest that revascularization is associated with a substantial and statistically significant improvement in survival, which becomes apparent when we account for the dynamic nature of treatment over time.
 
-### Test to see if we want to use the other covariates
+### Test to see if we want to use the other covariates:
 
 ```{r, warning = FALSE}
 zph_test <- cox.zph(coxph(Surv(start, stop, status) ~ revasc + age + sysbp + stchange, , data = grace2))
@@ -244,7 +258,7 @@ tvc_interaction<- coxph(Surv(start, stop, status) ~ revasc_status * revascdays, 
 summary(tvc_interaction)
 ```
 
-In this interaction Cox proportional hazards model, we examined whether the effect of revascularization on survival depended on the number of days from admission to the revascularization procedure. The model included revasc_status, revascdays, and their interaction term. The analysis revealed that both revasc_status and revascdays were highly significant with p-values less than 2e-16, indicating that both receiving revascularization and the number of days from admission to the procedure independently affect survival. However, the interaction term (revasc_status:revascdays) was not statistically significant (p = 0.158), suggesting that the impact of revascularization on survival does not vary significantly based on how many days after admission it was performed. The hazard ratio for the interaction term was approximately 1.03 (95% CI: 0.97–1.07), meaning the modification effect is negligible. In summary, while both revascularization and time since admission to revascularization individually influence survival, their interaction does not significantly alter the risk of death in this dataset.
+In this interaction Cox proportional hazards model, we examined whether the effect of revascularization on survival depended on the number of days from admission to the revascularization procedure. The model included revasc_status, revascdays, and their interaction term. The analysis revealed that both revasc_status and revascdays were highly significant with p-values less than 2e-16, indicating that both receiving revascularization and the number of days from admission to the procedure independently affect survival. The interaction term (revasc_status:revascdays) was not statistically significant (p = 0.158), suggesting that the impact of revascularization on survival does not vary significantly based on how many days after admission it was performed. The hazard ratio for the interaction term was approximately 1.03 (95% CI: 0.97–1.07), meaning the modification effect is negligible. In summary, while both revascularization and time since admission to revascularization individually influence survival, their interaction does not significantly alter the risk of death in this dataset.
 
 ## References
 
