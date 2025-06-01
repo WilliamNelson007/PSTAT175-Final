@@ -88,8 +88,6 @@ After fitting a comprehensive Cox proportional hazards model incorporating all c
 
 ## 3: Check Proportional Hazards Assumptions
 
-Log-Log plot for revasc:
-
 ```{r}
 ggsurvplot(survfit(Surv(days,death) ~ revasc, data = GRACE1000),
            fun = "cloglog") + 
@@ -97,7 +95,7 @@ ggsurvplot(survfit(Surv(days,death) ~ revasc, data = GRACE1000),
        title = "Log-Log Plot by Revasc")
 ```
 
-In this plot, the curves for patients who underwent revascularization (revasc=1) and those who did not (revasc=0) are presented. The relatively parallel nature of the curves suggests that the proportional hazards assumption holds reasonably well for the revascularization variable, as the log-log curves for the two groups do not cross and maintain a fairly consistent vertical separation throughout the range of time. Overall, the log-log plot supports the use of the Cox proportional hazards model with revascularization as a predictor
+In this Complementary Log-Log plot of the treatment and control groups, the curves for patients who underwent revascularization (revasc=1) and those who did not (revasc=0) are presented. The relatively parallel nature of the curves suggests that the proportional hazards assumption holds reasonably well for the revascularization variable, as the log-log curves for the two groups do not cross and maintain a fairly consistent vertical separation throughout the range of time. Overall, the log-log plot supports the use of the Cox proportional hazards model with revascularization as a predictor
 
 ```{r}
 ggsurvplot(survfit(Surv(days,death) ~ stchange, data = GRACE1000),
@@ -107,7 +105,7 @@ ggsurvplot(survfit(Surv(days,death) ~ stchange, data = GRACE1000),
 # also very parallel lines, no assumptions violated
 ```
 
-The log-log plot for Stchange also displays curves that do not cross into higher time values, meaning the proportional hazards assumption also holds here with the different Stchange values.
+The Complementary Log-Log plot for Stchange also displays curves that do not cross into higher time values, meaning the proportional hazards assumption also holds here with the different Stchange values.
 
 ### ZPH plot for age:
 
@@ -118,7 +116,7 @@ plot(cox.zph(age.mod))
 
 The statistical ouput shows a p-value of 0.0053 for both age and the global test, which is highly significant (p \< 0.05). This indicates a violation of the proportional hazards assumption for age, meaning that the effect of age on the hazard is not constant over time. This zph plot visualizes Schoenfeld residuals for age over time in the Cox model. The residuals appear randomly scattered around the horizontal axis, and the smoothed curve does not display a clear trend. This pattern suggests that the proportional hazards assumption for age holds reasonably well. Although we can't see it in the graph, with the p-value being that low we will still assume the ph assumptions are being violated.
 
-### zph Plot for Systilic Blood Pressure
+### ZPH Plot for Systolic Blood Pressure
 
 ```{r}
 kable(as.data.frame(cox.zph(sysbp.mod)$table))
@@ -128,10 +126,6 @@ plot(cox.zph(sysbp.mod))
 Here we see Systolic Blood Pressure also violating the proportional hazards assumption with a p_value of 8.4e-09. Once again it doesn't appear to have any clear correlation in the graph but with a p_value that low we can not ignore that there is a clear time-varying effect in the model.
 
 ## 4: Conclusions
-
-Hazard Ratios
-
-95% confidence intervals for hazard ratios
 
 Our main scientific question of interest is whether the revascularization procedure significantly increases patients' survival probabilities
 
