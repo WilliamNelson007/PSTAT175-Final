@@ -1,6 +1,6 @@
 ---
 title: "PSTAT-175-Final-Project"
-author: "William Nelson"
+author: "William Nelson, Cole Spyksma, Alicia Qu"
 date: "`r Sys.Date()`"
 output: pdf_document
 ---
@@ -8,10 +8,6 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
-You want to write up your project as a report. It should look like something you can read with sentences\
-and paragraphs. It should not be a series of answers to my questions like the homework assignment. You\
-should have sections that are numbered, but those sections should relate to the analysis that you are doing in your model
 
 ```{r, message=FALSE, warning=FALSE}
 library(readr)
@@ -31,7 +27,8 @@ We will be analyzing the "GRACE1000" dataset from Hosmer and Lemenshow and May (
 Here is a plot of the survival functions of patients who had the revascularization procedure in blue and patients who did not have the procedure done in red:
 
 ```{r, message=FALSE, warning=FALSE}
-GRACE1000 <- read_table("~/Downloads/GRACE1000.dat", col_names = FALSE)
+GRACE1000 <- read_table("GRACE1000.dat", col_names = FALSE)
+#GRACE1000 <- read_table("~/Downloads/GRACE1000.dat", col_names = FALSE)
 GRACE1000 <- GRACE1000 %>% select(-X10)
 colnames(GRACE1000) <- c("id", "days", "death", "revasc", "revascdays", "los", "age", "sysbp", "stchange")
 ```
@@ -106,7 +103,6 @@ ggsurvplot(survfit(Surv(days,death) ~ revasc, data = GRACE1000),
 In this plot, the curves for patients who underwent revascularization (revasc=1) and those who did not (revasc=0) are presented. The relatively parallel nature of the curves suggests that the proportional hazards assumption holds reasonably well for the revascularization variable, as the log-log curves for the two groups do not cross and maintain a fairly consistent vertical separation throughout the range of time. Overall, the log-log plot supports the use of the Cox proportional hazards model with revascularization as a predictor
 
 
-
 ```{r}
 ggsurvplot(survfit(Surv(days,death) ~ stchange, data = GRACE1000),
            fun = "cloglog") + 
@@ -114,6 +110,8 @@ ggsurvplot(survfit(Surv(days,death) ~ stchange, data = GRACE1000),
        title = "Log-Log Plot by Stchange")
 # also very parallel lines, no assumptions violated
 ```
+
+The log-log plot for Stchange also displays curves that do not cross into higher time values, meaning the proportional hazards assumption also holds here with the different Stchange values.
 
 ### ZPH plot for age:
 
@@ -147,6 +145,7 @@ summary(revasc.mod)
 exp(coef(revasc.mod) + c(-1.96,1.96) * sqrt(revasc.mod$var[1,1]))
 exp(confint(revasc.mod))
 ```
+
 The summary of the revasc.mod Cox model indicates that revascularization is a highly significant predictor of survival (p < 0.0001), with a hazard ratio of 0.4892 and a 95% confidence interval of [0.391, 0.612]. This means that patients who underwent revascularization were approximately 51% less likely to die compared to those who did not undergo the procedure. The hazard ratio being less than 1 signifies a protective effect of revascularization.
 
 ```{r}
@@ -155,7 +154,7 @@ exp(coef(stchange.mod) + c(-1.96, 1.96) * sqrt(stchange.mod$var[1, 1]))
 exp(confint(stchange.mod))
 ```
 
-Patients with an ST change on their initial ECG have a 68% higher hazard of mortality compared to those without such deviations, after controlling for time. This is a clinically meaningful result, as it highlights that ST changes detected early in an ECG are strongly associated with worse survival outcomes. The statistical significance (p < 0.00001) and a confidence interval for the hazard ratio of [1.332, 2.119] suggest that this association is reliable.
+Patients with an ST change on their initial ECG have a 68% higher hazard of mortality compared to those without such deviations, after controlling for time. This is a clinically meaningful result, as it highlights that ST changes detected early in an ECG are strongly associated with worse survival outcomes. The statistical significance (p < 0.00001) and a confidence interval for the hazard ratio of [1.332, 2.119] (an interval greater than 1) suggest that this association is reliable.
 
 ## 5: Advanced Methods
 
@@ -242,6 +241,7 @@ kable(head(grace2))
 tvc <- coxph(Surv(start, stop, status) ~ revasc, data = grace2)
 summary(tvc)
 ```
+
 In this Cox proportional hazards model, we analyzed the effect of revascularization on patient survival, accounting for the time-varying nature of the treatment by splitting the dataset at the point when revascularization was performed. The model revealed a significant association between revascularization and reduced hazard of death, with a hazard ratio of approximately 0.50 (95% CI: 0.40, 0.63), indicating that after revascularization, the risk of death was roughly half that of patients who had not yet undergone the procedure. This approach effectively modeled the time-dependent impact of revascularization by allowing the treatment’s hazard to vary based on when it was performed during the follow-up period. Overall, these results suggest that revascularization is associated with a substantial and statistically significant improvement in survival, which becomes apparent when we account for the dynamic nature of treatment over time.
 
 ### Test to see if we want to use the other covariates
@@ -249,8 +249,8 @@ In this Cox proportional hazards model, we analyzed the effect of revascularizat
 ```{r, warning = FALSE}
 zph_test <- cox.zph(coxph(Surv(start, stop, status) ~ revasc + age + sysbp + stchange, , data = grace2))
 kable(as.data.frame(zph_test$table))
-
 ```
+
 We would not want to use any of the other covariates in this case as they all fail to meet the PH assumptions even while splitting on the day of revascularization
 
 Following the textbook - "suppose the clinicians on the GRACE study wanted
@@ -260,6 +260,7 @@ to determine whether the effect depended on the number of days from admission to
 tvc_interaction<- coxph(Surv(start, stop, status) ~ revasc_status * revascdays, data = grace2)
 summary(tvc_interaction)
 ```
+
 In this interaction Cox proportional hazards model, we examined whether the effect of revascularization on survival depended on the number of days from admission to the revascularization procedure. The model included revasc_status, revascdays, and their interaction term. The analysis revealed that both revasc_status and revascdays were highly significant with p-values less than 2e-16, indicating that both receiving revascularization and the number of days from admission to the procedure independently affect survival. However, the interaction term (revasc_status:revascdays) was not statistically significant (p = 0.158), suggesting that the impact of revascularization on survival does not vary significantly based on how many days after admission it was performed. The hazard ratio for the interaction term was approximately 1.03 (95% CI: 0.97–1.07), meaning the modification effect is negligible. In summary, while both revascularization and time since admission to revascularization individually influence survival, their interaction does not significantly alter the risk of death in this dataset.
 
 ## References
