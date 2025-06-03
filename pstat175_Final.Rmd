@@ -20,8 +20,8 @@ library(knitr)
 
 ```{r, message=FALSE, warning=FALSE}
 # Read in data
-#GRACE1000 <- read_table("GRACE1000.dat", col_names = FALSE)
-GRACE1000 <- read_table("~/Downloads/GRACE1000.dat", col_names = FALSE)
+GRACE1000 <- read_table("GRACE1000.dat", col_names = FALSE)
+#GRACE1000 <- read_table("~/Downloads/GRACE1000.dat", col_names = FALSE)
 GRACE1000 <- GRACE1000 %>% select(-X10)
 colnames(GRACE1000) <- c("id", "days", "death", "revasc", "revascdays", "los", "age", "sysbp", "stchange")
 ```
