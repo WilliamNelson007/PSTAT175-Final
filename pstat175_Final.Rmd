@@ -24,6 +24,12 @@ GRACE1000 <- read_table("GRACE1000.dat", col_names = FALSE)
 #GRACE1000 <- read_table("~/Downloads/GRACE1000.dat", col_names = FALSE)
 GRACE1000 <- GRACE1000 %>% select(-X10)
 colnames(GRACE1000) <- c("id", "days", "death", "revasc", "revascdays", "los", "age", "sysbp", "stchange")
+GRACE1000 <- GRACE1000 %>% mutate(
+  revascdays = case_when(
+    revascdays == 0 ~ 0.1,
+    TRUE ~ revascdays
+  )
+)
 ```
 
 # Final Project
@@ -184,18 +190,35 @@ grace2 <- GRACE1000 %>%
   ) %>%
   filter(!is.na(stop)) %>%
   arrange(id, interval) %>% 
-  filter(!(start==0 & stop==0))
+  filter(!(start==stop))
 
 # Check output
 kable(head(grace2))
-
 ```
+
+### Check Cox PH Model Assumptions: Log-Log Plot
+
+```{r}
+ggsurvplot(survfit(Surv(start,stop,status) ~ interval, data = grace2),
+           fun = "cloglog") + 
+  labs(x = "log(Days)", y = "Complementary Log-Log",
+       title = "Log-Log Plot by Interval")
+```
+
+The Proportional Hazards assumption appears to be violated in this model with just the interval as a covariate because we see the lines intersect rather than stay parallel to each other.
 
 ### Cox PH to show the effect of revascularization now that we have accounted for time
 
 ```{r, warning = FALSE}
-tvc <- coxph(Surv(start, stop, status) ~ revasc, data = grace2)
-summary(tvc)
+# Original:
+#tvc <- coxph(Surv(start, stop, status) ~ revasc, data = grace2)
+#summary(tvc)
+
+# Suggested:
+intervalMod <- coxph(Surv(start, stop, status) ~ interval, data = grace2)
+summary(intervalMod)
+
+
 ```
 
 In this Cox proportional hazards model, we analyzed the effect of revascularization on patient survival, accounting for the time-varying nature of the treatment by splitting the dataset at the point when revascularization was performed. The model revealed a significant association between revascularization and reduced hazard of death, with a hazard ratio of approximately 0.50 (95% CI: 0.40, 0.63), indicating that after revascularization, the risk of death was roughly half that of patients who had not yet undergone the procedure. This approach effectively modeled the time-dependent impact of revascularization by allowing the treatment’s hazard to vary based on when it was performed during the follow-up period. Overall, these results suggest that revascularization is associated with a substantial and statistically significant improvement in survival, which becomes apparent when we account for the dynamic nature of treatment over time.
@@ -203,8 +226,12 @@ In this Cox proportional hazards model, we analyzed the effect of revascularizat
 ### Test to see if we want to use the other covariates:
 
 ```{r, warning = FALSE}
-zph_test <- cox.zph(coxph(Surv(start, stop, status) ~ revasc + age + sysbp + stchange, , data = grace2))
-kable(as.data.frame(zph_test$table))
+#zph_test <- cox.zph(coxph(Surv(start, stop, status) ~ revasc + age + sysbp + stchange, , data = grace2))
+#kable(as.data.frame(zph_test$table))
+
+# Stratify?
+strataMod <- coxph(Surv(start, stop, status) ~ strata(interval) + age + revasc + sysbp + stchange, data = grace2)
+summary(strataMod)
 ```
 
 We would not want to use any of the other covariates in this case as they all fail to meet the PH assumptions even while splitting on the day of revascularization
