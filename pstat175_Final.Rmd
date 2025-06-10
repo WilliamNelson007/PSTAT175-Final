@@ -217,8 +217,19 @@ The Proportional Hazards assumption appears to be violated in this model with ju
 # Suggested:
 intervalMod <- coxph(Surv(start, stop, status) ~ interval, data = grace2)
 summary(intervalMod)
+anova(intervalMod)
+# Significant result with interval as covariate representing treatment (interval = 2)
+# and control (interval = 1)
 
+# Interactions between interval and other covariates besides revasc
+ageInteractMod <- coxph(Surv(start, stop, status) ~ interval * age, data = grace2)
+summary(ageInteractMod)# Significant interaction
 
+sysbpInteractMod <- coxph(Surv(start, stop, status) ~ interval * sysbp, data = grace2)
+summary(sysbpInteractMod) # Not significant interaction
+
+stchangeInteractMod <- coxph(Surv(start, stop, status) ~ interval * stchange, data = grace2)
+summary(stchangeInteractMod) # Not significant interaction
 ```
 
 In this Cox proportional hazards model, we analyzed the effect of revascularization on patient survival, accounting for the time-varying nature of the treatment by splitting the dataset at the point when revascularization was performed. The model revealed a significant association between revascularization and reduced hazard of death, with a hazard ratio of approximately 0.50 (95% CI: 0.40, 0.63), indicating that after revascularization, the risk of death was roughly half that of patients who had not yet undergone the procedure. This approach effectively modeled the time-dependent impact of revascularization by allowing the treatment’s hazard to vary based on when it was performed during the follow-up period. Overall, these results suggest that revascularization is associated with a substantial and statistically significant improvement in survival, which becomes apparent when we account for the dynamic nature of treatment over time.
@@ -232,6 +243,7 @@ In this Cox proportional hazards model, we analyzed the effect of revascularizat
 # Stratify?
 strataMod <- coxph(Surv(start, stop, status) ~ strata(interval) + age + revasc + sysbp + stchange, data = grace2)
 summary(strataMod)
+anova(strataMod)
 ```
 
 We would not want to use any of the other covariates in this case as they all fail to meet the PH assumptions even while splitting on the day of revascularization
@@ -252,3 +264,15 @@ This analysis of the GRACE1000 dataset examined the relationship between revascu
 ## References
 
 Hosmer, D.W. and Lemeshow, S. and May, S. (2008) Applied Survival Analysis: Regression Modeling of Time to Event Data: Second Edition, John Wiley and Sons Inc., New York, NY
+
+Wickham H (2016). *ggplot2: Elegant Graphics for Data Analysis*. Springer-Verlag New York. ISBN 978-3-319-24277-4, [https://ggplot2.tidyverse.org](https://ggplot2.tidyverse.org/).
+
+Wickham H, Averick M, Bryan J, Chang W, McGowan LD, François R, Grolemund G, Hayes A, Henry L, Hester J, Kuhn M, Pedersen TL, Miller E, Bache SM, Müller K, Ooms J, Robinson D, Seidel DP, Spinu V, Takahashi K, Vaughan D, Wilke C, Woo K, Yutani H (2019). “Welcome to the tidyverse.” *Journal of Open Source Software*, 4(43), 1686. [doi:10.21105/joss.01686](https://doi.org/10.21105/joss.01686).
+
+Kassambara A, Kosinski M, Biecek P (2024). *survminer: Drawing Survival Curves using 'ggplot2'*. R package version 0.5.0, <https://rpkgs.datanovia.com/survminer/index.html>.
+
+Wickham H, Hester J, Bryan J (2024). *readr: Read Rectangular Text Data*. R package version 2.1.5, https://github.com/tidyverse/readr, [https://readr.tidyverse.org](https://readr.tidyverse.org/).
+
+Terry M. Therneau, Patricia M. Grambsch (2000). *Modeling Survival Data: Extending the Cox Model*. Springer, New York. ISBN 0-387-98784-3.
+
+Xie Y (2025). *knitr: A General-Purpose Package for Dynamic Report Generation in R*. R package version 1.50, <https://yihui.org/knitr/>.
