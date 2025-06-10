@@ -30,7 +30,7 @@ colnames(GRACE1000) <- c("id", "days", "death", "revasc", "revascdays", "los", "
 
 ## 1: Introduction
 
-We will be analyzing the "GRACE1000" dataset from Hosmer and Lemenshow and May (2008), which contains data on 1000 patients who were part of a study on the effectiveness of revascularization by the Global Registry of Acute Coronary Events (GRACE). Our failure time of interest is the follow up time when the researchers checked-in with the patients, and our event of interest is whether the patient died during the follow-up period. Our main covariate of interest will be whether the patient had the revascularization procedure performed on them, which is coded by the "revasc" variable with value 1 if the patient had the procedure and 0 if they did not. The main research question of interest is whether revascularization is associated with higher survival rates after completing the procedure.
+We will be analyzing the "GRACE1000" dataset from Hosmer and Lemenshow and May (2008), which contains data on 1000 patients who were part of a study on the effectiveness of revascularization by the Global Registry of Acute Coronary Events (GRACE). Our failure time of interest is the follow up time when the researchers checked-in with the patients, and our event of interest is whether the patient died during the follow-up period. Our main covariate of interest will be whether the patient had the revascularization procedure performed on them, which is coded by the "revasc" variable with value 1 if the patient had the procedure and 0 if they did not. The main research question of interest is whether revascularization is associated with higher survival rates after completing the procedure. We hypothesize that patients who receive the revascularization procedure will have higher survival rates than patients without the procedure done.
 
 Here is a plot of the survival functions of patients who had the revascularization procedure in blue and patients who did not have the procedure done in red:
 
@@ -150,50 +150,6 @@ exp(confint(stchange.mod))
 Patients with an ST change on their initial ECG have a 68% higher hazard of mortality compared to those without such deviations, after controlling for time. This is a clinically meaningful result, as it highlights that ST changes detected early in an ECG are strongly associated with worse survival outcomes. The statistical significance (p \< 0.00001) and a confidence interval for the hazard ratio of [1.332, 2.119] (an interval greater than 1) suggest that this association is reliable.
 
 ## 5: Advanced Methods
-
-### Binning Revascdays
-
-In the GRACE1000 dataset, "revascdays" is coded as the censor time if the patient did not have the revascularization procedure done. We hypothesize that this could interfere with our models' performance because we have many observations that did not have revascularization done and were censored at the end of the study (180 days), so the range of values from 0 to 180 may not be the best way to analyze the covariate. We will instead experiment with binning "revascdays" into a categorical variable called "daysGroup" which will take on ranges of values from "revascdays" so we can analyze the covariate as a set of ranges rather than continuous. We will set nearly equally spaced intervals for the bins, but after binning them this way, we can analyze the results and look for other ways to group the values:
-
-```{r}
-binnedGRACE1000 <- GRACE1000 %>% mutate(
-  daysGroup = case_when(
-    (revascdays >= 0 & revascdays <= 2) ~ "0-2 Days",
-    (revascdays >= 3 & revascdays <= 6) ~ "3-6 Days",
-    (revascdays >= 7 & revascdays <= 10) ~ "7-10 Days",
-    (revascdays >= 11 & revascdays <= 14) ~ "11-14 Days",
-    revascdays > 14 ~ "14+ Days"
-  )
-)
-```
-
-Now that we have our new data, lets see the results of our Cox PH model on the binned covariate:
-
-```{r}
-summary(coxph(Surv(days,death) ~ daysGroup, data = binnedGRACE1000))
-```
-
-This model is using the "0-2 Days" group as a baseline which we know because it does not show up in the summary output. This means that all of the hazard ratios seen in this output are in relation to the "0-2 Days" till revascularization group. We see that the "14+ Days" group has a statistically significant difference in survival probabilities according to this model with a hazard ratio of 0.7272 compared to the "0-2 Days" group. We also see that the "3-6 Days" group is the only group to have a higher hazard rate than the "0-2 Days" group, so I would like to change the bins to explore this further:
-
-```{r}
-binnedGRACE1000 <- GRACE1000 %>% mutate(
-  daysGroup = case_when(
-    (revascdays >= 0 & revascdays <= 2) ~ "0-2 Days",
-    (revascdays >= 3 & revascdays <= 14) ~ "3-14 Days",
-    revascdays >= 15 ~ "15+ Days"
-  )
-)
-
-summary(coxph(Surv(days,death) ~ daysGroup, data = binnedGRACE1000))
-```
-
-In this new binned data we see a similar outcome where the control group (revascdays = 180) has a statistically significant difference in hazard rates than the "0-2 Days" group. Lets take a look at a graph of this result:
-
-```{r}
-ggsurvplot(survfit(Surv(days,death) ~ daysGroup, data = binnedGRACE1000))
-```
-
-I believe that the higher volume of censored observations in the 0-2 and 3-14 day groups along with the correlation of the patients needing the revascularization procedure could be affecting the model to calculate a higher hazard rate for patients with early revascularization, but this also is not the best way to deal with the revascularization times. Now that we have explored the "revascdays" covariate, let us focus on our covariate of interest, "revasc".
 
 ### Treating Revascularization as a Time-Dependent Covariate
 
