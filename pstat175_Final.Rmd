@@ -230,6 +230,11 @@ summary(sysbpInteractMod) # Not significant interaction
 
 stchangeInteractMod <- coxph(Surv(start, stop, status) ~ interval * stchange, data = grace2)
 summary(stchangeInteractMod) # Not significant interaction
+
+# Stratify?
+strataMod <- coxph(Surv(start, stop, status) ~ strata(interval) + age + revasc + sysbp + stchange, data = grace2)
+summary(strataMod)
+anova(strataMod)
 ```
 
 In this Cox proportional hazards model, we analyzed the effect of revascularization on patient survival, accounting for the time-varying nature of the treatment by splitting the dataset at the point when revascularization was performed. The model revealed a significant association between revascularization and reduced hazard of death, with a hazard ratio of approximately 0.50 (95% CI: 0.40, 0.63), indicating that after revascularization, the risk of death was roughly half that of patients who had not yet undergone the procedure. This approach effectively modeled the time-dependent impact of revascularization by allowing the treatment’s hazard to vary based on when it was performed during the follow-up period. Overall, these results suggest that revascularization is associated with a substantial and statistically significant improvement in survival, which becomes apparent when we account for the dynamic nature of treatment over time.
@@ -237,13 +242,10 @@ In this Cox proportional hazards model, we analyzed the effect of revascularizat
 ### Test to see if we want to use the other covariates:
 
 ```{r, warning = FALSE}
-#zph_test <- cox.zph(coxph(Surv(start, stop, status) ~ revasc + age + sysbp + stchange, , data = grace2))
-#kable(as.data.frame(zph_test$table))
+zph_test <- cox.zph(coxph(Surv(start, stop, status) ~ revasc + age + sysbp + stchange, , data = grace2))
+kable(as.data.frame(zph_test$table))
 
-# Stratify?
-strataMod <- coxph(Surv(start, stop, status) ~ strata(interval) + age + revasc + sysbp + stchange, data = grace2)
-summary(strataMod)
-anova(strataMod)
+
 ```
 
 We would not want to use any of the other covariates in this case as they all fail to meet the PH assumptions even while splitting on the day of revascularization
