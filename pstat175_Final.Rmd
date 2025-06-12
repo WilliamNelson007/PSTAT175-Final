@@ -196,6 +196,52 @@ grace2 <- GRACE1000 %>%
 kable(head(grace2))
 ```
 
+
+```{r}
+# WE DON'T INCLUDE INTERVAL IN THIS ALLMOD BECAUSE IT DEPENDS ON TIME
+# NO STRATIFYING OR TESTING FOR THE PH ASSUMPTION 
+# SHOULD WE FOLLOW THE ORDER WE DETERMINED FROM THE PREVIOUS PART?
+
+#allmod2 <- coxph(Surv(start,stop,status) ~ revasc + age + sysbp + stchange, data = grace2)
+allmod2 <- coxph(Surv(start,stop,status) ~ stchange + sysbp + revasc + age, data = grace2)
+
+summary(allmod2)
+```
+
+
+
+```{r}
+# hazard ratio for revasc
+exp(coef(allmod2)[3] + c(-1.96, 1.96) * sqrt(allmod2$var[3, 3]))
+```
+
+The summary of the time-varying model still indicates that revascularization is a highly significant predictor of survival (p \< 0.0001), with a 95% confidence interval of the hazard ratio being [0.4892116, 0.7787804]. The hazard ratio being less than 1 signifies a protective effect of revascularization.
+
+```{r}
+# Interactions between interval and other covariates besides revasc
+ageInteractMod <- coxph(Surv(start, stop, status) ~ interval * age, data = grace2)
+summary(ageInteractMod)# Significant interaction
+# would this be useful information to include?
+```
+
+The age interaction model shows a significant interaction between interval and age.
+
+```{r}
+sysbpInteractMod <- coxph(Surv(start, stop, status) ~ interval * sysbp, data = grace2)
+summary(sysbpInteractMod) # Not significant interaction
+```
+
+The sysbp interaction model does not show a significant interaction between interval and sysbp.
+
+```{r}
+stchangeInteractMod <- coxph(Surv(start, stop, status) ~ interval * stchange, data = grace2)
+summary(stchangeInteractMod) # Not significant interaction
+```
+
+The stchange interaction model does not show a significant interaction between interval and stchange.
+
+-- WE PROBABLY NEED TO DELETE ALL OF THIS BELOW (NO TESTING FOR PH ASSUMPTION IN THIS PART) --
+
 ### Check Cox PH Model Assumptions: Log-Log Plot
 
 ```{r}
@@ -258,6 +304,7 @@ summary(tvc_interaction)
 ```
 
 In this interaction Cox proportional hazards model, we examined whether the effect of revascularization on survival depended on the number of days from admission to the revascularization procedure. The model included revasc_status, revascdays, and their interaction term. The analysis revealed that both revasc_status and revascdays were highly significant with p-values less than 2e-16, indicating that both receiving revascularization and the number of days from admission to the procedure independently affect survival. The interaction term (revasc_status:revascdays) was not statistically significant (p = 0.158), suggesting that the impact of revascularization on survival does not vary significantly based on how many days after admission it was performed. The hazard ratio for the interaction term was approximately 1.03 (95% CI: 0.97–1.07), meaning the modification effect is negligible. In summary, while both revascularization and time since admission to revascularization individually influence survival, their interaction does not significantly alter the risk of death in this dataset.
+
 
 ## Conclusion
 
