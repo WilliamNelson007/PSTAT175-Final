@@ -216,14 +216,14 @@ From the summary output of our model we can still see all our covariates have si
 anova(allmod2)
 ```
 
-Similar to the summary output, we see that all four covariates have statistically significant p-values for their Chi-Squared log-likelihood test, which tells us that each of the four covariates provide significant information to the model that allows it to better model the time to an event.
+Similar to the summary output, we see that all four covariates have statistically significant p-values for their Chi-Squared log-likelihood test, which tells us that each of the four covariates provide significant information to the model that allow it to better model the time to an event. Because we still want to analyze the effect of revascularization, we can calculate a 95% confidence interval for the hazard ratio between the treatment and control groups:
 
 ```{r}
 # hazard ratio for revasc
 exp(coef(allmod2)[3] + c(-1.96, 1.96) * sqrt(allmod2$var[3, 3]))
 ```
 
-The summary of the time-varying model still indicates that revascularization is a highly significant predictor of survival (p \< 0.0001), with a 95% confidence interval of the hazard ratio being [0.4892116, 0.7787804]. The hazard ratio being less than 1 signifies a protective effect of revascularization.
+The time-varying model still indicates that revascularization is a highly significant predictor of survival (p \< 0.0001), with a 95% confidence interval of the hazard ratio being [0.4892116, 0.7787804]. The hazard ratio being less than 1 signifies a protective effect of revascularization.
 
 ```{r}
 # Interactions between interval and other covariates besides revasc
