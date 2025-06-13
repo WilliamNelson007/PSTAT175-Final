@@ -196,19 +196,18 @@ grace2 <- GRACE1000 %>%
 kable(head(grace2))
 ```
 
-
 ```{r}
 # WE DON'T INCLUDE INTERVAL IN THIS ALLMOD BECAUSE IT DEPENDS ON TIME
 # NO STRATIFYING OR TESTING FOR THE PH ASSUMPTION 
 # SHOULD WE FOLLOW THE ORDER WE DETERMINED FROM THE PREVIOUS PART?
 
 #allmod2 <- coxph(Surv(start,stop,status) ~ revasc + age + sysbp + stchange, data = grace2)
-allmod2 <- coxph(Surv(start,stop,status) ~ stchange + sysbp + revasc + age, data = grace2)
+
+allmod2 <- coxph(Surv(start,stop,status) ~ age + sysbp + revasc + stchange, data = grace2)
 
 summary(allmod2)
+anova(allmod2)
 ```
-
-
 
 ```{r}
 # hazard ratio for revasc
@@ -305,7 +304,6 @@ summary(tvc_interaction)
 
 In this interaction Cox proportional hazards model, we examined whether the effect of revascularization on survival depended on the number of days from admission to the revascularization procedure. The model included revasc_status, revascdays, and their interaction term. The analysis revealed that both revasc_status and revascdays were highly significant with p-values less than 2e-16, indicating that both receiving revascularization and the number of days from admission to the procedure independently affect survival. The interaction term (revasc_status:revascdays) was not statistically significant (p = 0.158), suggesting that the impact of revascularization on survival does not vary significantly based on how many days after admission it was performed. The hazard ratio for the interaction term was approximately 1.03 (95% CI: 0.97–1.07), meaning the modification effect is negligible. In summary, while both revascularization and time since admission to revascularization individually influence survival, their interaction does not significantly alter the risk of death in this dataset.
 
-
 ## Conclusion
 
 This analysis of the GRACE1000 dataset examined the relationship between revascularization and survival in patients with acute coronary events. Initial exploratory analysis, including Kaplan-Meier curves, suggested that patients undergoing revascularization had better survival probabilities compared to those who did not. Cox proportional hazards models, selected using AIC and BIC criteria, consistently highlighted age as a strong predictor of mortality, with lower AIC and BIC values compared to other covariates such as systolic blood pressure, ST changes, and revascularization status. However, a comprehensive model including all predictors provided the best overall fit, balancing complexity and explanatory power. The analysis of the proportional hazards assumption revealed that while age and systolic blood pressure violated the PH assumption, revascularization and ST changes appeared to satisfy it, supporting their use in Cox models. Advanced modeling approaches addressed the time-dependent nature of revascularization by splitting patient records at the time of treatment. This adjustment showed that revascularization significantly reduced the hazard of death (HR \~0.50, p \< 0.0001), affirming its protective effect even after accounting for the timing of the procedure. Further exploration, including the binning of “revascdays” and testing for interaction effects, revealed that while both revascularization and time from admission to revascularization independently influenced survival, their interaction was not statistically significant. This suggests that the survival benefit of revascularization was consistent regardless of when it was administered during hospitalization. In summary, this project demonstrates that revascularization is associated with a substantial and statistically significant improvement in survival, supporting its role as an effective treatment in acute coronary events.
@@ -320,7 +318,7 @@ Wickham H, Averick M, Bryan J, Chang W, McGowan LD, François R, Grolemund G, Ha
 
 Kassambara A, Kosinski M, Biecek P (2024). *survminer: Drawing Survival Curves using 'ggplot2'*. R package version 0.5.0, <https://rpkgs.datanovia.com/survminer/index.html>.
 
-Wickham H, Hester J, Bryan J (2024). *readr: Read Rectangular Text Data*. R package version 2.1.5, https://github.com/tidyverse/readr, [https://readr.tidyverse.org](https://readr.tidyverse.org/).
+Wickham H, Hester J, Bryan J (2024). *readr: Read Rectangular Text Data*. R package version 2.1.5, <https://github.com/tidyverse/readr>, [https://readr.tidyverse.org](https://readr.tidyverse.org/).
 
 Terry M. Therneau, Patricia M. Grambsch (2000). *Modeling Survival Data: Extending the Cox Model*. Springer, New York. ISBN 0-387-98784-3.
 
