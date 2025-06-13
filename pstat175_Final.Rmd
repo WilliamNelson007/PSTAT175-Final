@@ -196,6 +196,8 @@ grace2 <- GRACE1000 %>%
 kable(head(grace2))
 ```
 
+With our data organized to represent revascularization status as a time-varying covariate, we can apply our best fitting model from above to our adjusted data and look at the results:
+
 ```{r}
 # WE DON'T INCLUDE INTERVAL IN THIS ALLMOD BECAUSE IT DEPENDS ON TIME
 # NO STRATIFYING OR TESTING FOR THE PH ASSUMPTION 
@@ -206,8 +208,15 @@ kable(head(grace2))
 allmod2 <- coxph(Surv(start,stop,status) ~ age + sysbp + revasc + stchange, data = grace2)
 
 summary(allmod2)
+```
+
+From the summary output of our model we can still see all our covariates have significant effects of the on the time till an event, with p-values much smaller than our significance level of 0.05. Our overall likelihood ratio test also reports an extremely small p-value which tells us that our model is working very well and the covariates are providing the necessary information to estimate time till an event. We can also look at the anova output to check the significance of each covariate individually as they are added:
+
+```{r}
 anova(allmod2)
 ```
+
+Similar to the summary output, we see that all four covariates have statistically significant p-values for their Chi-Squared log-likelihood test, which tells us that each of the four covariates provide significant information to the model that allows it to better model the time to an event.
 
 ```{r}
 # hazard ratio for revasc
