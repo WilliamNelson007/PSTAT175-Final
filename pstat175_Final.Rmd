@@ -225,30 +225,31 @@ exp(coef(allmod2)[3] + c(-1.96, 1.96) * sqrt(allmod2$var[3, 3]))
 
 The time-varying model still indicates that revascularization is a highly significant predictor of survival (p \< 0.0001), with a 95% confidence interval of the hazard ratio being [0.4892116, 0.7787804]. The hazard ratio being less than 1 signifies a protective effect of revascularization.
 
-Beyond the
+To ensure that the model of best fit we found still works properly, we want to make sure that our covariates do not have a significant interaction with the interval variable which would tell us that the covariate also varies with time. We will fit models with an interaction term between the interval signifier and each covariate, and analyze the results of these models:
+
+#### \^\^\^ Check reasoning/wording
 
 ```{r}
 # Interactions between interval and other covariates besides revasc
 ageInteractMod <- coxph(Surv(start, stop, status) ~ interval * age, data = grace2)
 summary(ageInteractMod)# Significant interaction
-# would this be useful information to include?
 ```
 
-The age interaction model shows a significant interaction between interval and age.
+We see in this summary output that the age interaction model shows a significant interaction between interval and age. The p-value of 0.04 is just below our significance threshold so we conclude that there is a significant interaction between the interval and age measurement. This tells us that \#############################################
 
 ```{r}
 sysbpInteractMod <- coxph(Surv(start, stop, status) ~ interval * sysbp, data = grace2)
 summary(sysbpInteractMod) # Not significant interaction
 ```
 
-The sysbp interaction model does not show a significant interaction between interval and sysbp.
+The sysbp interaction model does not show a significant interaction between interval and sysbp with a p-value above our significance threshold of 0.05. We can conclude that there is no significant interaction between the patients systolic blood pressure measurement and the interval signifier.
 
 ```{r}
 stchangeInteractMod <- coxph(Surv(start, stop, status) ~ interval * stchange, data = grace2)
 summary(stchangeInteractMod) # Not significant interaction
 ```
 
-The stchange interaction model does not show a significant interaction between interval and stchange.
+The stchange interaction model does not show a significant interaction between interval and stchange with a p-value of 0.835. This p-value is large and leads us to conclude that there is no interaction effect between the stchange classifier and the interval signifier.
 
 ### -- WE PROBABLY NEED TO DELETE ALL OF THIS BELOW (NO TESTING FOR PH ASSUMPTION IN THIS PART) --
 
