@@ -225,6 +225,8 @@ exp(coef(allmod2)[3] + c(-1.96, 1.96) * sqrt(allmod2$var[3, 3]))
 
 The time-varying model still indicates that revascularization is a highly significant predictor of survival (p \< 0.0001), with a 95% confidence interval of the hazard ratio being [0.4892116, 0.7787804]. The hazard ratio being less than 1 signifies a protective effect of revascularization.
 
+Beyond the
+
 ```{r}
 # Interactions between interval and other covariates besides revasc
 ageInteractMod <- coxph(Surv(start, stop, status) ~ interval * age, data = grace2)
@@ -248,7 +250,7 @@ summary(stchangeInteractMod) # Not significant interaction
 
 The stchange interaction model does not show a significant interaction between interval and stchange.
 
--- WE PROBABLY NEED TO DELETE ALL OF THIS BELOW (NO TESTING FOR PH ASSUMPTION IN THIS PART) --
+### -- WE PROBABLY NEED TO DELETE ALL OF THIS BELOW (NO TESTING FOR PH ASSUMPTION IN THIS PART) --
 
 ### Check Cox PH Model Assumptions: Log-Log Plot
 
