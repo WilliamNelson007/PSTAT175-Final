@@ -235,7 +235,7 @@ ageInteractMod <- coxph(Surv(start, stop, status) ~ interval * age, data = grace
 summary(ageInteractMod)# Significant interaction
 ```
 
-We see in this summary output that the age interaction model shows a significant interaction between interval and age. The p-value of 0.04 is just below our significance threshold so we conclude that there is a significant interaction between the interval and age measurement. This tells us that \#############################################
+We see in this summary output that the age interaction model shows a significant interaction between interval and age because the p-value of 0.04 is just below our significance threshold so we conclude that there is a significant interaction between the interval and age measurement. This tells us that there is a statistically significant difference between the effect of the age covariate on the time to an event between the pre and post-revascularization time intervals, and this suggests that the age covariate may have some underlying time correlation.
 
 ```{r}
 sysbpInteractMod <- coxph(Surv(start, stop, status) ~ interval * sysbp, data = grace2)
