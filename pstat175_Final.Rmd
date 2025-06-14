@@ -199,126 +199,62 @@ kable(head(grace2))
 With our data organized to represent revascularization status as a time-varying covariate, we can apply our best fitting model from above to our adjusted data and look at the results:
 
 ```{r}
-# WE DON'T INCLUDE INTERVAL IN THIS ALLMOD BECAUSE IT DEPENDS ON TIME
-# NO STRATIFYING OR TESTING FOR THE PH ASSUMPTION 
-# SHOULD WE FOLLOW THE ORDER WE DETERMINED FROM THE PREVIOUS PART?
-
-#allmod2 <- coxph(Surv(start,stop,status) ~ revasc + age + sysbp + stchange, data = grace2)
-
-allmod2 <- coxph(Surv(start,stop,status) ~ age + sysbp + revasc + stchange, data = grace2)
-
+allmod2 <- coxph(Surv(start,stop,status) ~ stchange + sysbp + revasc + age, data = grace2)
 summary(allmod2)
 ```
 
-From the summary output of our model we can still see all our covariates have significant effects of the on the time till an event, with p-values much smaller than our significance level of 0.05. Our overall likelihood ratio test also reports an extremely small p-value which tells us that our model is working very well and the covariates are providing the necessary information to estimate time till an event. We can also look at the anova output to check the significance of each covariate individually as they are added:
+From the summary output of our model we can still see all our covariates have significant effects of the on the time till an event, with p-values much smaller than our significance level of 0.05. Our overall likelihood ratio test also reports an extremely small p-value which tells us that the covariates in the model are providing the necessary information to estimate time until an event. We can also look at the ANOVA output to check the significance of each covariate individually as they are added:
 
 ```{r}
 anova(allmod2)
 ```
 
-Similar to the summary output, we see that all four covariates have statistically significant p-values for their Chi-Squared log-likelihood test, which tells us that each of the four covariates provide significant information to the model that allow it to better model the time to an event. Because we still want to analyze the effect of revascularization, we can calculate a 95% confidence interval for the hazard ratio between the treatment and control groups:
+Similar to the summary output, we see that all four covariates have statistically significant p-values for their Chi-Squared log-likelihood test, and each of the four covariates provide significant information to the model.
+
+Next, we want to make sure that our non-revasc covariates do not have a significant interaction with the interval variable - if they do, this would tell us that the effects of the covariate can be attributed to time. We will fit models with an interaction term between the interval signifier and each covariate, and analyze the results of these models:
+
+```{r}
+ageInteractMod <- coxph(Surv(start, stop, status) ~ interval * age, data = grace2)
+summary(ageInteractMod)
+```
+
+We see in this summary output that the age interaction model shows a significant interaction between interval and age, with a p-value of 0.04 just below our significance threshold. Because of the significance of the interaction, we conclude that the effect of the age covariate on survival time varies depending on the value of the interval, suggesting that the age covariate has some underlying time correlation and its inclusion in the model may be problematic.
+
+```{r}
+sysbpInteractMod <- coxph(Surv(start, stop, status) ~ interval * sysbp, data = grace2)
+summary(sysbpInteractMod)
+```
+
+The sysbp interaction model does not show a significant interaction between interval and sysbp, with a p-value of 0.0988. This p-value is above our threshold and leads us to conclude that there is no interaction effect between the sysbp covariate and the interval signifier.
+
+```{r}
+stchangeInteractMod <- coxph(Surv(start, stop, status) ~ interval * stchange, data = grace2)
+summary(stchangeInteractMod)
+```
+
+The stchange interaction model does not show a significant interaction between interval and stchange, with a p-value of 0.835. This p-value is above our threshold and leads us to conclude that there is no interaction effect between the stchange covariate and the interval signifier.
+
+Because of the significant interaction between age and interval in ageInteractMod, we fit a new model on the time-varying data without the age covariate.
+
+```{r}
+allmod3 <- coxph(Surv(start,stop,status) ~ sysbp + stchange + revasc, data = grace2)
+summary(allmod3)
+```
+
+We can now calculate a 95% confidence interval for the hazard ratio between the treatment and control groups:
 
 ```{r}
 # hazard ratio for revasc
-exp(coef(allmod2)[3] + c(-1.96, 1.96) * sqrt(allmod2$var[3, 3]))
+exp(coef(allmod3)[3] + c(-1.96, 1.96) * sqrt(allmod3$var[3, 3]))
 ```
 
-The time-varying model still indicates that revascularization is a highly significant predictor of survival (p \< 0.0001), with a 95% confidence interval of the hazard ratio being [0.4892116, 0.7787804]. The hazard ratio being less than 1 signifies a protective effect of revascularization.
-
-To ensure that the model of best fit we found still works properly, we want to make sure that our covariates do not have a significant interaction with the interval variable which would tell us that the covariate also varies with time. We will fit models with an interaction term between the interval signifier and each covariate, and analyze the results of these models:
-
-#### \^\^\^ Check reasoning/wording
-
-```{r}
-# Interactions between interval and other covariates besides revasc
-ageInteractMod <- coxph(Surv(start, stop, status) ~ interval * age, data = grace2)
-summary(ageInteractMod)# Significant interaction
-```
-
-We see in this summary output that the age interaction model shows a significant interaction between interval and age because the p-value of 0.04 is just below our significance threshold so we conclude that there is a significant interaction between the interval and age measurement. This tells us that there is a statistically significant difference between the effect of the age covariate on the time to an event between the pre and post-revascularization time intervals, and this suggests that the age covariate may have some underlying time correlation.
-
-```{r}
-sysbpInteractMod <- coxph(Surv(start, stop, status) ~ interval * sysbp, data = grace2)
-summary(sysbpInteractMod) # Not significant interaction
-```
-
-The sysbp interaction model does not show a significant interaction between interval and sysbp with a p-value above our significance threshold of 0.05. We can conclude that there is no significant interaction between the patients systolic blood pressure measurement and the interval signifier.
-
-```{r}
-stchangeInteractMod <- coxph(Surv(start, stop, status) ~ interval * stchange, data = grace2)
-summary(stchangeInteractMod) # Not significant interaction
-```
-
-The stchange interaction model does not show a significant interaction between interval and stchange with a p-value of 0.835. This p-value is large and leads us to conclude that there is no interaction effect between the stchange classifier and the interval signifier.
-
-### -- WE PROBABLY NEED TO DELETE ALL OF THIS BELOW (NO TESTING FOR PH ASSUMPTION IN THIS PART) --
-
-### Check Cox PH Model Assumptions: Log-Log Plot
-
-```{r}
-ggsurvplot(survfit(Surv(start,stop,status) ~ interval, data = grace2),
-           fun = "cloglog") + 
-  labs(x = "log(Days)", y = "Complementary Log-Log",
-       title = "Log-Log Plot by Interval")
-```
-
-The Proportional Hazards assumption appears to be violated in this model with just the interval as a covariate because we see the lines intersect rather than stay parallel to each other.
-
-### Cox PH to show the effect of revascularization now that we have accounted for time
-
-```{r, warning = FALSE}
-# Original:
-#tvc <- coxph(Surv(start, stop, status) ~ revasc, data = grace2)
-#summary(tvc)
-
-# Suggested:
-intervalMod <- coxph(Surv(start, stop, status) ~ interval, data = grace2)
-summary(intervalMod)
-anova(intervalMod)
-# Significant result with interval as covariate representing treatment (interval = 2)
-# and control (interval = 1)
-
-# Interactions between interval and other covariates besides revasc
-ageInteractMod <- coxph(Surv(start, stop, status) ~ interval * age, data = grace2)
-summary(ageInteractMod)# Significant interaction
-
-sysbpInteractMod <- coxph(Surv(start, stop, status) ~ interval * sysbp, data = grace2)
-summary(sysbpInteractMod) # Not significant interaction
-
-stchangeInteractMod <- coxph(Surv(start, stop, status) ~ interval * stchange, data = grace2)
-summary(stchangeInteractMod) # Not significant interaction
-
-# Stratify?
-strataMod <- coxph(Surv(start, stop, status) ~ strata(interval) + age + revasc + sysbp + stchange, data = grace2)
-summary(strataMod)
-anova(strataMod)
-```
-
-In this Cox proportional hazards model, we analyzed the effect of revascularization on patient survival, accounting for the time-varying nature of the treatment by splitting the dataset at the point when revascularization was performed. The model revealed a significant association between revascularization and reduced hazard of death, with a hazard ratio of approximately 0.50 (95% CI: 0.40, 0.63), indicating that after revascularization, the risk of death was roughly half that of patients who had not yet undergone the procedure. This approach effectively modeled the time-dependent impact of revascularization by allowing the treatment’s hazard to vary based on when it was performed during the follow-up period. Overall, these results suggest that revascularization is associated with a substantial and statistically significant improvement in survival, which becomes apparent when we account for the dynamic nature of treatment over time.
-
-### Test to see if we want to use the other covariates:
-
-```{r, warning = FALSE}
-zph_test <- cox.zph(coxph(Surv(start, stop, status) ~ revasc + age + sysbp + stchange, , data = grace2))
-kable(as.data.frame(zph_test$table))
-
-
-```
-
-We would not want to use any of the other covariates in this case as they all fail to meet the PH assumptions even while splitting on the day of revascularization
-
-Following the textbook - "suppose the clinicians on the GRACE study wanted to determine whether the effect depended on the number of days from admission to revascularization."
-
-```{r}
-tvc_interaction<- coxph(Surv(start, stop, status) ~ revasc_status * revascdays, data = grace2)
-summary(tvc_interaction)
-```
-
-In this interaction Cox proportional hazards model, we examined whether the effect of revascularization on survival depended on the number of days from admission to the revascularization procedure. The model included revasc_status, revascdays, and their interaction term. The analysis revealed that both revasc_status and revascdays were highly significant with p-values less than 2e-16, indicating that both receiving revascularization and the number of days from admission to the procedure independently affect survival. The interaction term (revasc_status:revascdays) was not statistically significant (p = 0.158), suggesting that the impact of revascularization on survival does not vary significantly based on how many days after admission it was performed. The hazard ratio for the interaction term was approximately 1.03 (95% CI: 0.97–1.07), meaning the modification effect is negligible. In summary, while both revascularization and time since admission to revascularization individually influence survival, their interaction does not significantly alter the risk of death in this dataset.
+The time-varying model still indicates that revascularization is a highly significant predictor of survival (p \< 0.0001), with a 95% confidence interval of the hazard ratio being [0.3913134, 0.6144861]. The hazard ratio being less than 1 signifies a protective effect of revascularization.
 
 ## Conclusion
 
-This analysis of the GRACE1000 dataset examined the relationship between revascularization and survival in patients with acute coronary events. Initial exploratory analysis, including Kaplan-Meier curves, suggested that patients undergoing revascularization had better survival probabilities compared to those who did not. Cox proportional hazards models, selected using AIC and BIC criteria, consistently highlighted age as a strong predictor of mortality, with lower AIC and BIC values compared to other covariates such as systolic blood pressure, ST changes, and revascularization status. However, a comprehensive model including all predictors provided the best overall fit, balancing complexity and explanatory power. The analysis of the proportional hazards assumption revealed that while age and systolic blood pressure violated the PH assumption, revascularization and ST changes appeared to satisfy it, supporting their use in Cox models. Advanced modeling approaches addressed the time-dependent nature of revascularization by splitting patient records at the time of treatment. This adjustment showed that revascularization significantly reduced the hazard of death (HR \~0.50, p \< 0.0001), affirming its protective effect even after accounting for the timing of the procedure. Further exploration, including the binning of “revascdays” and testing for interaction effects, revealed that while both revascularization and time from admission to revascularization independently influenced survival, their interaction was not statistically significant. This suggests that the survival benefit of revascularization was consistent regardless of when it was administered during hospitalization. In summary, this project demonstrates that revascularization is associated with a substantial and statistically significant improvement in survival, supporting its role as an effective treatment in acute coronary events.
+This analysis of the GRACE1000 dataset examined the relationship between revascularization and survival in patients with acute coronary events. Initial exploratory analysis, including Kaplan-Meier curves, suggested that patients undergoing revascularization had better survival probabilities compared to those who did not. Cox proportional hazards models, selected using AIC and BIC criteria, consistently highlighted age as a strong predictor of mortality, with lower AIC and BIC values compared to other covariates such as systolic blood pressure, ST changes, and revascularization status. However, a comprehensive model including all predictors provided the best overall fit, balancing complexity and explanatory power. The analysis of the proportional hazards assumption revealed that while age and systolic blood pressure violated the PH assumption, revascularization and ST changes appeared to satisfy it, supporting their use in Cox models.
+
+Advanced modeling approaches addressed the time-dependent nature of revascularization by splitting patient records at the time of treatment. After accounting for the potential interaction between the effects of the other covariates and the time interval, the updated model still showed that revascularization significantly reduced the hazard of death (HR \< 1, p \< 0.0001), affirming its protective effect even after accounting for the timing of the procedure. This suggests that the survival benefit of revascularization was consistent regardless of when it was administered during hospitalization. In summary, this project demonstrates that revascularization is associated with a substantial and statistically significant improvement in survival, supporting its role as an effective treatment in acute coronary events.
 
 ## References
 
