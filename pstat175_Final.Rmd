@@ -203,7 +203,7 @@ allmod2 <- coxph(Surv(start,stop,status) ~ stchange + sysbp + revasc + age, data
 summary(allmod2)
 ```
 
-From the summary output of our model we can still see all our covariates have significant effects of the on the time till an event, with p-values much smaller than our significance level of 0.05. Our overall likelihood ratio test also reports an extremely small p-value which tells us that the covariates in the model are providing the necessary information to estimate time until an event. We can also look at the ANOVA output to check the significance of each covariate individually as they are added:
+From the summary output of our model we can see all our covariates have significant effects on survival time, with p-values much smaller than our significance level of 0.05. The likelihood ratio test for the model also reports an extremely small p-value which tells us that the covariates in the model are providing the necessary information to estimate time until an event. We can also look at the ANOVA output to check the significance of each covariate individually as they are added:
 
 ```{r}
 anova(allmod2)
@@ -218,7 +218,7 @@ ageInteractMod <- coxph(Surv(start, stop, status) ~ interval * age, data = grace
 summary(ageInteractMod)
 ```
 
-We see in this summary output that the age interaction model shows a significant interaction between interval and age, with a p-value of 0.04 just below our significance threshold. Because of the significance of the interaction, we conclude that the effect of the age covariate on survival time varies depending on the value of the interval, suggesting that the age covariate has some underlying time correlation and its inclusion in the model may be problematic.
+We see in this summary output that the age interaction model shows a significant interaction between interval and age, with a p-value of 0.04 just below our significance threshold. Because of the interaction's significance, we conclude that the effect of the age covariate on survival time varies depending on the value of the interval, suggesting that the age covariate may have some underlying time correlation and its inclusion in the model is problematic.
 
 ```{r}
 sysbpInteractMod <- coxph(Surv(start, stop, status) ~ interval * sysbp, data = grace2)
@@ -241,22 +241,25 @@ allmod3 <- coxph(Surv(start,stop,status) ~ sysbp + stchange + revasc, data = gra
 summary(allmod3)
 ```
 
+The updated model shows susbp, stchange, and revasc continuing to have significant effects on survival time, with p-values much smaller than 0.05. The outcome of the likelihood ratio test also has not changed.
+
 We can now calculate a 95% confidence interval for the hazard ratio between the treatment and control groups:
 
 ```{r}
-# hazard ratio for revasc
 exp(coef(allmod3)[3] + c(-1.96, 1.96) * sqrt(allmod3$var[3, 3]))
 ```
 
-The time-varying model still indicates that revascularization is a highly significant predictor of survival (p \< 0.0001), with a 95% confidence interval of the hazard ratio being [0.3913134, 0.6144861]. The hazard ratio being less than 1 signifies a protective effect of revascularization.
+Just like the models fitted on the original data, the time-varying model indicates that revascularization is a highly significant predictor of survival (p \< 0.0001), with a 95% confidence interval of the hazard ratio being [0.3913134, 0.6144861]. The hazard ratio being less than 1 signifies a protective effect of revascularization.
 
 ## Conclusion
 
 This analysis of the GRACE1000 dataset examined the relationship between revascularization and survival in patients with acute coronary events. Initial exploratory analysis, including Kaplan-Meier curves, suggested that patients undergoing revascularization had better survival probabilities compared to those who did not. Cox proportional hazards models, selected using AIC and BIC criteria, consistently highlighted age as a strong predictor of mortality, with lower AIC and BIC values compared to other covariates such as systolic blood pressure, ST changes, and revascularization status. However, a comprehensive model including all predictors provided the best overall fit, balancing complexity and explanatory power. The analysis of the proportional hazards assumption revealed that while age and systolic blood pressure violated the PH assumption, revascularization and ST changes appeared to satisfy it, supporting their use in Cox models.
 
-Advanced modeling approaches addressed the time-dependent nature of revascularization by splitting patient records at the time of treatment. After accounting for the potential interaction between the effects of the other covariates and the time interval, the updated model still showed that revascularization significantly reduced the hazard of death (HR \< 1, p \< 0.0001), affirming its protective effect even after accounting for the timing of the procedure. This suggests that the survival benefit of revascularization was consistent regardless of when it was administered during hospitalization. In summary, this project demonstrates that revascularization is associated with a substantial and statistically significant improvement in survival, supporting its role as an effective treatment in acute coronary events.
+Advanced modeling approaches addressed the time-dependent nature of revascularization by splitting patient records at the time of treatment. After accounting for the potential interaction between the effects of the non-revasc covariates and the time interval, the updated model still showed that revascularization significantly reduced the hazard of death (HR \< 1, p \< 0.0001), affirming its protective effects even after accounting for the timing of the procedure. This suggests that the survival benefit of revascularization was consistent regardless of when it was administered during hospitalization. In summary, this project demonstrates that revascularization is associated with a substantial and statistically significant improvement in survival, supporting its role as an effective treatment in acute coronary events.
 
 ## References
+
+Chambers, J. M. and Hastie, T. J. (1992) Statistical Models in S, Wadsworth & Brooks/Cole.
 
 Hosmer, D.W. and Lemeshow, S. and May, S. (2008) Applied Survival Analysis: Regression Modeling of Time to Event Data: Second Edition, John Wiley and Sons Inc., New York, NY
 
